@@ -14,7 +14,14 @@ class PolymarketAPI:
     def __init__(self, private_key: str):
         self.private_key = private_key
         self.address = self._derive_address(private_key)
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.client = httpx.AsyncClient(
+            timeout=30.0,
+            headers={
+                "User-Agent": "Polymarket-Bot/1.0",
+                "Accept": "application/json"
+            },
+            follow_redirects=True
+        )
     
     def _derive_address(self, private_key: str) -> str:
         """从私钥派生地址"""
@@ -46,19 +53,25 @@ class PolymarketAPI:
             else:
                 return {"error": f"不支持的方法: {method}"}
             
+            content_type = response.headers.get("content-type", "")
+            response_text = response.text[:500] if response.text else "(空响应)"
+            
             if response.status_code == 200:
-                try:
-                    return response.json()
-                except Exception:
-                    return {"error": "响应解析失败", "raw": response.text[:200]}
+                if "application/json" in content_type or response.text.startswith(("[", "{")):
+                    try:
+                        return response.json()
+                    except Exception as e:
+                        return {"error": f"JSON 解析失败: {str(e)}", "raw": response_text}
+                else:
+                    return {"error": f"非 JSON 响应 (Content-Type: {content_type})", "raw": response_text}
             else:
-                return {"error": f"HTTP {response.status_code}", "detail": response.text[:200]}
+                return {"error": f"HTTP {response.status_code}", "detail": response_text}
         except httpx.TimeoutException:
             return {"error": "请求超时"}
         except httpx.ConnectError as e:
             return {"error": f"连接失败: {str(e)}"}
         except Exception as e:
-            return {"error": f"请求异常: {str(e)}"}
+            return {"error": f"请求异常: {type(e).__name__}: {str(e)}"}
 
     async def get_balance(self) -> Dict:
         """获取用户余额"""
@@ -181,22 +194,44 @@ class BTC5mTrader:
     async def initialize(self):
         """初始化，获取市场信息"""
         try:
-            self.log("INFO", "正在获取市场信息...")
+            self.log("INFO", f"正在连接 Polymarket API...")
+            self.log("INFO", f"钱包地址: {self.api.address}")
             
-            # 首先尝试通过 slug 获取市场
-            market = await self.api.get_market_by_slug(self.MARKET_SLUG)
+            # 测试连接
+            test_url = f"{self.api.GAMMA_URL}/markets?limit=1"
+            self.log("INFO", f"测试连接: {test_url}")
+            test_result = await self.api._safe_request("GET", test_url)
+            
+            if "error" in test_result:
+                self.log("ERROR", f"API 连接失败: {test_result['error']}")
+                if "raw" in test_result:
+                    self.log("ERROR", f"响应内容: {test_result['raw'][:100]}")
+                return False
+            
+            self.log("INFO", "API 连接成功，正在获取市场信息...")
+            
+            # 通过 slug 获取市场
+            market_url = f"{self.api.GAMMA_URL}/markets?slug={self.MARKET_SLUG}"
+            self.log("INFO", f"查询市场: {market_url}")
+            market_result = await self.api._safe_request("GET", market_url)
+            
+            market = None
+            if "error" not in market_result and isinstance(market_result, list) and len(market_result) > 0:
+                market = market_result[0]
+                self.log("INFO", f"通过 slug 找到市场")
+            else:
+                if "error" in market_result:
+                    self.log("WARNING", f"slug 查询失败: {market_result['error']}")
+                
+                # 使用第一个可用市场
+                self.log("INFO", "使用第一个可用市场...")
+                list_result = await self.api._safe_request("GET", f"{self.api.GAMMA_URL}/markets?limit=1")
+                if "error" not in list_result and isinstance(list_result, list) and len(list_result) > 0:
+                    market = list_result[0]
+                    self.log("INFO", f"使用市场: {market.get('question', 'Unknown')[:50]}")
             
             if not market:
-                # 如果 slug 查询失败，尝试通过搜索
-                self.log("WARNING", f"通过 slug '{self.MARKET_SLUG}' 未找到市场，尝试搜索...")
-                url = f"{self.api.GAMMA_URL}/markets?limit=1"
-                result = await self.api._safe_request("GET", url)
-                if isinstance(result, list) and len(result) > 0:
-                    market = result[0]
-                    self.log("INFO", f"使用第一个可用市场: {market.get('question', 'Unknown')}")
-            
-            if not market:
-                self.log("ERROR", "未找到市场信息，请检查网络连接或 API 可用性")
+                self.log("ERROR", "无法获取市场信息")
                 return False
             
             self.market_info = market
@@ -207,34 +242,32 @@ class BTC5mTrader:
                 import json
                 try:
                     tokens = json.loads(clob_token_ids) if isinstance(clob_token_ids, str) else clob_token_ids
-                    if len(tokens) >= 2:
+                    if isinstance(tokens, list) and len(tokens) >= 2:
                         self.token_ids["yes"] = tokens[0]
                         self.token_ids["no"] = tokens[1]
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.log("WARNING", f"解析 clobTokenIds 失败: {e}")
             
-            # 如果没有 clobTokenIds，尝试从 tokens 字段获取
+            # 从 tokens 字段获取
             if not self.token_ids:
                 tokens = market.get("tokens", [])
-                for token in tokens:
-                    outcome = token.get("outcome", "").upper()
+                for token in tokens if isinstance(tokens, list) else []:
+                    outcome = str(token.get("outcome", "")).upper()
                     token_id = token.get("tokenId", token.get("id", ""))
-                    if outcome == "YES":
+                    if outcome == "YES" and token_id:
                         self.token_ids["yes"] = token_id
-                    elif outcome == "NO":
+                    elif outcome == "NO" and token_id:
                         self.token_ids["no"] = token_id
             
-            self.log("INFO", f"市场: {market.get('question', 'Unknown')}")
-            self.log("INFO", f"Condition ID: {market.get('conditionId', 'N/A')}")
-            self.log("INFO", f"Yes Token: {self.token_ids.get('yes', 'N/A')}")
-            self.log("INFO", f"No Token: {self.token_ids.get('no', 'N/A')}")
+            self.log("INFO", f"市场: {market.get('question', 'Unknown')[:60]}")
+            self.log("INFO", f"Yes Token: {self.token_ids.get('yes', '未找到')[:20]}...")
+            self.log("INFO", f"No Token: {self.token_ids.get('no', '未找到')[:20]}...")
             
-            # 获取余额和持仓
             await self.update_account_info()
             
             return True
         except Exception as e:
-            self.log("ERROR", f"初始化异常: {e}")
+            self.log("ERROR", f"初始化异常: {type(e).__name__}: {e}")
             return False
 
     async def update_account_info(self):
