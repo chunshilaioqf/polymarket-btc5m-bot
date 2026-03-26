@@ -29,6 +29,7 @@
                 <h2 class="card-title" id="settings-title">设置</h2>
                 <div class="header-controls">
                     <div class="select-wrapper">
+                        <label id="theme-label" class="visually-hidden">Theme</label>
                         <select id="theme-select">
                             <option value="system" id="theme-system">跟随系统</option>
                             <option value="light" id="theme-light">浅色</option>
@@ -36,6 +37,7 @@
                         </select>
                     </div>
                     <div class="select-wrapper">
+                        <label id="language-label" class="visually-hidden">Language</label>
                         <select id="language-select">
                             <option value="en">English</option>
                             <option value="ja">日本語</option>
@@ -49,17 +51,19 @@
                 </div>
             </div>
 
-            <div class="input-group">
-                <label id="private-key-label">私钥</label>
-                <input type="password" id="private-key" class="private-key-input" placeholder="输入您的私钥 (0x...)">
-                <p class="input-hint" id="private-key-hint">私钥仅在交易期间存储在内存中</p>
-            </div>
+            <form>
+                <div class="input-group">
+                    <label id="private-key-label">私钥</label>
+                    <input type="password" id="private-key" class="private-key-input" placeholder="输入您的私钥 (0x...)">
+                    <p class="input-hint" id="private-key-hint">私钥仅在交易期间存储在内存中</p>
+                </div>
 
-            <div class="input-group">
-                <label>
-                    <input type="checkbox" id="save-private-key"> 保存私钥到本地（可选）
-                </label>
-            </div>
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="save-private-key"> 保存私钥到本地（可选）
+                    </label>
+                </div>
+            </form>
 
             <div class="header-controls" style="margin-top: 20px;">
                 <button class="btn btn-primary" id="start-btn">开始交易</button>
