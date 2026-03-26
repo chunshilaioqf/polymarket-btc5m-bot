@@ -9,4 +9,7 @@ venv/
 node_modules/
 .DS_Store
 .idea/
-.vscode/
+.vscode/-e 
+.conda_env
+.bot.pid
+bot.log
