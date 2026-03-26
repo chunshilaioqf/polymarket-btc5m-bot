@@ -6,8 +6,21 @@ set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND_DIR="$PROJECT_DIR/backend"
+PROJECT_NAME="polymarket-btc5m-bot"
 PID_FILE="$PROJECT_DIR/.bot.pid"
 LOG_FILE="$PROJECT_DIR/bot.log"
+CONDA_ENV_FILE="$PROJECT_DIR/.conda_env"
+
+# Setup conda activation command
+CONDA_ACTIVATE=""
+if [ -f "$CONDA_ENV_FILE" ]; then
+    ENV_NAME=$(cat "$CONDA_ENV_FILE")
+    if command -v conda &> /dev/null; then
+        CONDA_BASE=$(conda info --base)
+        source "$CONDA_BASE/etc/profile.d/conda.sh"
+        CONDA_ACTIVATE="conda activate $ENV_NAME && "
+    fi
+fi
 
 start() {
     if [ -f "$PID_FILE" ]; then
@@ -22,7 +35,15 @@ start() {
 
     echo "Starting Polymarket BTC 5m Bot..."
     cd "$BACKEND_DIR"
-    nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
+    
+    if [ -n "$CONDA_ACTIVATE" ]; then
+        # Use conda environment
+        eval "$CONDA_ACTIVATE" && nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
+    else
+        # Use system Python
+        nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
+    fi
+    
     echo $! > "$PID_FILE"
     sleep 2
 
@@ -31,6 +52,9 @@ start() {
         echo "  PID: $(cat "$PID_FILE")"
         echo "  URL: http://localhost:8000"
         echo "  Log: $LOG_FILE"
+        if [ -f "$CONDA_ENV_FILE" ]; then
+            echo "  Env: $(cat "$CONDA_ENV_FILE") (conda)"
+        fi
     else
         echo "✗ Failed to start bot. Check log: $LOG_FILE"
         cat "$LOG_FILE"
@@ -85,6 +109,12 @@ info() {
     echo ""
     echo "Project: $PROJECT_DIR"
     echo "Backend: $BACKEND_DIR"
+    
+    if [ -f "$CONDA_ENV_FILE" ]; then
+        echo "Environment: $(cat "$CONDA_ENV_FILE") (conda)"
+    else
+        echo "Environment: System Python"
+    fi
 
     if [ -f "$LOG_FILE" ]; then
         echo ""
