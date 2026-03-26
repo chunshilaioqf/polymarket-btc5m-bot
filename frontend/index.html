@@ -7,152 +7,226 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- 头部 -->
-        <header class="header">
-            <h1 id="title">Polymarket BTC 5m 交易机器人</h1>
-            <div class="header-controls">
-                <div class="status-indicator running" id="status-indicator">
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 id="title">BTC 5m Bot</h1>
+                <div class="status-badge" id="status-badge">
                     <span class="status-dot"></span>
-                    <span id="status-text">运行中</span>
-                </div>
-                <div class="status-indicator stopped" id="connection-indicator">
-                    <span class="status-dot"></span>
-                    <span id="connection-text">已连接</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- 设置区域 -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title" id="settings-title">设置</h2>
-                <div class="header-controls">
-                    <div class="select-wrapper">
-                        <label id="theme-label" class="visually-hidden">Theme</label>
-                        <select id="theme-select">
-                            <option value="system" id="theme-system">跟随系统</option>
-                            <option value="light" id="theme-light">浅色</option>
-                            <option value="dark" id="theme-dark">深色</option>
-                        </select>
-                    </div>
-                    <div class="select-wrapper">
-                        <label id="language-label" class="visually-hidden">Language</label>
-                        <select id="language-select">
-                            <option value="en">English</option>
-                            <option value="ja">日本語</option>
-                            <option value="zh-CN" selected>简体中文</option>
-                            <option value="ko">한국어</option>
-                            <option value="de">Deutsch</option>
-                            <option value="fr">Français</option>
-                            <option value="es">Español</option>
-                        </select>
-                    </div>
+                    <span id="status-text">已停止</span>
                 </div>
             </div>
 
-            <form>
-                <div class="input-group">
+            <!-- 设置 -->
+            <div class="sidebar-section">
+                <h3 id="settings-title">设置</h3>
+                <div class="form-group">
+                    <label id="theme-label">主题</label>
+                    <select id="theme-select">
+                        <option value="system" id="theme-system">跟随系统</option>
+                        <option value="light" id="theme-light">浅色</option>
+                        <option value="dark" id="theme-dark">深色</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="language-label">语言</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh-CN" selected>简体中文</option>
+                        <option value="ko">한국어</option>
+                        <option value="de">Deutsch</option>
+                        <option value="fr">Français</option>
+                        <option value="es">Español</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 账户 -->
+            <div class="sidebar-section">
+                <h3 id="account-title">账户</h3>
+                <div class="form-group">
                     <label id="private-key-label">私钥</label>
-                    <input type="password" id="private-key" class="private-key-input" placeholder="输入您的私钥 (0x...)">
-                    <p class="input-hint" id="private-key-hint">私钥仅在交易期间存储在内存中</p>
+                    <form onsubmit="return false;">
+                        <input type="password" id="private-key" placeholder="输入私钥 (0x...)">
+                    </form>
+                    <p class="hint" id="private-key-hint">仅存储在内存中</p>
                 </div>
-
-                <div class="input-group">
+                <div class="form-group">
                     <label>
-                        <input type="checkbox" id="save-private-key"> 保存私钥到本地（可选）
+                        <input type="checkbox" id="save-private-key"> 
+                        <span id="save-key-label">保存到本地</span>
                     </label>
                 </div>
-            </form>
-
-            <div class="header-controls" style="margin-top: 20px;">
-                <button class="btn btn-primary" id="start-btn">开始交易</button>
-                <button class="btn btn-danger" id="stop-btn" disabled>停止交易</button>
-            </div>
-        </div>
-
-        <!-- 交易配置 -->
-        <div class="card">
-            <h2 class="card-title" id="config-title">交易配置</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <div class="status-label">交易对</div>
-                    <div class="status-value">BTC-updown-5m</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">限价单价格</div>
-                    <div class="status-value">10</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">数量</div>
-                    <div class="status-value">0.5</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">取消窗口期</div>
-                    <div class="status-value">最后 30 秒</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 状态 -->
-        <div class="card">
-            <h2 class="card-title" id="status-title">状态</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <div class="status-label" id="current-period-label">当前周期</div>
-                    <div class="status-value" id="current-period">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="period-start-label">周期开始</div>
-                    <div class="status-value" id="period-start">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="period-end-label">周期结束</div>
-                    <div class="status-value" id="period-end">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="seconds-remaining-label">剩余秒数</div>
-                    <div class="status-value" id="seconds-remaining">-</div>
-                </div>
-            </div>
-            
-            <div class="status-grid" style="margin-top: 16px;">
-                <div class="status-item">
-                    <div class="status-label" id="yes-order-label">Yes 订单</div>
-                    <div class="status-value" id="yes-order">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="no-order-label">No 订单</div>
-                    <div class="status-value" id="no-order">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="yes-filled-label">Yes 已成交</div>
-                    <div class="status-value success" id="yes-filled">-</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label" id="no-filled-label">No 已成交</div>
-                    <div class="status-value success" id="no-filled">-</div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="start-btn">
+                        <span id="start-text">开始交易</span>
+                    </button>
+                    <button class="btn btn-danger" id="stop-btn" disabled>
+                        <span id="stop-text">停止交易</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="status-grid" style="margin-top: 16px;">
-                <div class="status-item">
-                    <div class="status-label" id="market-label">市场</div>
-                    <div class="status-value" id="market-name">-</div>
+            <!-- 连接状态 -->
+            <div class="sidebar-footer">
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span id="connection-text">未连接</span>
                 </div>
             </div>
-        </div>
+        </aside>
 
-        <!-- 日志 -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title" id="logs-title">日志</h2>
-                <button class="btn btn-secondary" id="clear-logs-btn">清空日志</button>
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 账户信息栏 -->
+            <div class="info-bar">
+                <div class="info-item">
+                    <span class="info-label" id="address-label">地址</span>
+                    <span class="info-value" id="address-value">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label" id="balance-label">余额</span>
+                    <span class="info-value highlight" id="balance-value">$0.00</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label" id="ws-status-label">WS</span>
+                    <span class="info-value" id="ws-status">-</span>
+                </div>
             </div>
-            <div class="log-container" id="logs-container">
-                <p class="input-hint" id="no-logs">暂无日志</p>
+
+            <!-- 状态卡片 -->
+            <div class="cards-grid">
+                <!-- 周期信息 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="period-title">当前周期</h3>
+                        <span class="badge" id="period-badge">-</span>
+                    </div>
+                    <div class="period-timer">
+                        <div class="timer-ring">
+                            <span class="timer-value" id="seconds-remaining">300</span>
+                            <span class="timer-unit" id="seconds-label">秒</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <span id="start-time-label">开始</span>
+                        <span id="period-start">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span id="end-time-label">结束</span>
+                        <span id="period-end">-</span>
+                    </div>
+                </div>
+
+                <!-- 订单状态 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="orders-title">订单状态</h3>
+                    </div>
+                    <div class="order-grid">
+                        <div class="order-item yes">
+                            <span class="order-label">YES</span>
+                            <span class="order-value" id="yes-order">-</span>
+                            <span class="order-status" id="yes-status">等待中</span>
+                        </div>
+                        <div class="order-item no">
+                            <span class="order-label">NO</span>
+                            <span class="order-value" id="no-order">-</span>
+                            <span class="order-status" id="no-status">等待中</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 配置信息 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="config-title">交易配置</h3>
+                    </div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <span class="config-label" id="pair-label">交易对</span>
+                            <span class="config-value">BTC-updown-5m</span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label" id="price-label">价格</span>
+                            <span class="config-value">10</span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label" id="qty-label">数量</span>
+                            <span class="config-value">0.5</span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label" id="cancel-label">取消窗口</span>
+                            <span class="config-value">30s</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <!-- 数据表格 -->
+            <div class="tables-grid">
+                <!-- 持仓 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="positions-title">持仓</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="positions-table">
+                            <thead>
+                                <tr>
+                                    <th id="th-market">市场</th>
+                                    <th id="th-side">方向</th>
+                                    <th id="th-qty">数量</th>
+                                    <th id="th-avg">均价</th>
+                                    <th id="th-value">价值</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positions-body">
+                                <tr class="empty-row">
+                                    <td colspan="5" id="no-positions">暂无持仓</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 交易历史 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="history-title">交易历史</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th id="th-time">时间</th>
+                                    <th id="th-market2">市场</th>
+                                    <th id="th-side2">方向</th>
+                                    <th id="th-price">价格</th>
+                                    <th id="th-amount">数量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <tr class="empty-row">
+                                    <td colspan="5" id="no-history">暂无交易记录</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日志 -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <h3 id="logs-title">日志</h3>
+                    <button class="btn btn-sm" id="clear-logs-btn">清空</button>
+                </div>
+                <div class="log-container" id="logs-container"></div>
+            </div>
+        </main>
     </div>
 
     <script src="/static/js/i18n.js"></script>

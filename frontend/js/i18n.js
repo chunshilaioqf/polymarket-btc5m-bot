@@ -1,330 +1,145 @@
 // 多语言支持
 const translations = {
     en: {
-        title: "Polymarket BTC 5m Bot",
-        settings: "Settings",
-        privateKey: "Private Key",
-        privateKeyPlaceholder: "Enter your private key (0x...)",
-        privateKeyHint: "Private key is stored in memory only during trading",
-        theme: "Theme",
-        themeSystem: "System",
-        themeLight: "Light",
-        themeDark: "Dark",
-        language: "Language",
-        start: "Start Trading",
-        stop: "Stop Trading",
-        clearLogs: "Clear Logs",
-        status: "Status",
-        running: "Running",
-        stopped: "Stopped",
-        currentPeriod: "Current Period",
-        periodStart: "Period Start",
-        periodEnd: "Period End",
-        secondsRemaining: "Seconds Remaining",
-        yesOrder: "Yes Order",
-        noOrder: "No Order",
-        yesFilled: "Yes Filled",
-        noFilled: "No Filled",
-        market: "Market",
-        logs: "Logs",
-        noLogs: "No logs yet",
-        connectionStatus: "Connection",
-        connected: "Connected",
-        disconnected: "Disconnected",
-        config: "Trading Config",
-        tradingPair: "Trading Pair",
-        price: "Price",
-        quantity: "Quantity",
-        cancelWindow: "Cancel Window",
-        startError: "Failed to start trading",
-        stopError: "Failed to stop trading",
-        seconds: "seconds"
+        title: "BTC 5m Bot", settings: "Settings", privateKey: "Private Key",
+        privateKeyPlaceholder: "Enter private key (0x...)", privateKeyHint: "Stored in memory only",
+        theme: "Theme", themeSystem: "System", themeLight: "Light", themeDark: "Dark",
+        language: "Language", start: "Start", stop: "Stop", clearLogs: "Clear",
+        status: "Status", running: "Running", stopped: "Stopped",
+        currentPeriod: "Current Period", seconds: "sec", yesOrder: "YES", noOrder: "NO",
+        config: "Config", logs: "Logs", connected: "Connected", disconnected: "Disconnected",
+        tradingPair: "Pair", price: "Price", quantity: "Qty", cancelWindow: "Cancel",
+        account: "Account", saveKey: "Save locally", positions: "Positions",
+        history: "Trade History", balance: "Balance", address: "Address",
+        noPositions: "No positions", noHistory: "No trade history",
+        thMarket: "Market", thSide: "Side", thQty: "Qty", thAvg: "Avg", thValue: "Value",
+        thTime: "Time", thPrice: "Price", thAmount: "Amount", wsStatus: "WS",
+        periodStart: "Start", periodEnd: "End", waiting: "Waiting"
     },
     ja: {
-        title: "Polymarket BTC 5m Bot",
-        settings: "設定",
-        privateKey: "秘密鍵",
-        privateKeyPlaceholder: "秘密鍵を入力 (0x...)",
-        privateKeyHint: "秘密鍵は取引中のみメモリに保存されます",
-        theme: "テーマ",
-        themeSystem: "システム",
-        themeLight: "ライト",
-        themeDark: "ダーク",
-        language: "言語",
-        start: "取引開始",
-        stop: "取引停止",
-        clearLogs: "ログをクリア",
-        status: "ステータス",
-        running: "実行中",
-        stopped: "停止",
-        currentPeriod: "現在期間",
-        periodStart: "期間開始",
-        periodEnd: "期間終了",
-        secondsRemaining: "残り時間",
-        yesOrder: "Yes注文",
-        noOrder: "No注文",
-        yesFilled: "Yes約定",
-        noFilled: "No約定",
-        market: "マーケット",
-        logs: "ログ",
-        noLogs: "ログがありません",
-        connectionStatus: "接続",
-        connected: "接続済み",
-        disconnected: "切断",
-        config: "取引設定",
-        tradingPair: "取引ペア",
-        price: "価格",
-        quantity: "数量",
-        cancelWindow: "キャンセル期間",
-        startError: "取引開始に失敗しました",
-        stopError: "取引停止に失敗しました",
-        seconds: "秒"
+        title: "BTC 5m Bot", settings: "設定", privateKey: "秘密鍵",
+        privateKeyPlaceholder: "秘密鍵を入力 (0x...)", privateKeyHint: "メモリのみに保存",
+        theme: "テーマ", themeSystem: "システム", themeLight: "ライト", themeDark: "ダーク",
+        language: "言語", start: "開始", stop: "停止", clearLogs: "クリア",
+        status: "ステータス", running: "実行中", stopped: "停止",
+        currentPeriod: "現在期間", seconds: "秒", yesOrder: "YES", noOrder: "NO",
+        config: "設定", logs: "ログ", connected: "接続済み", disconnected: "切断",
+        tradingPair: "ペア", price: "価格", quantity: "数量", cancelWindow: "キャンセル",
+        account: "アカウント", saveKey: "ローカル保存", positions: "ポジション",
+        history: "取引履歴", balance: "残高", address: "アドレス",
+        noPositions: "ポジションなし", noHistory: "取引履歴なし",
+        thMarket: "マーケット", thSide: "方向", thQty: "数量", thAvg: "平均", thValue: "価値",
+        thTime: "時間", thPrice: "価格", thAmount: "金額", wsStatus: "WS",
+        periodStart: "開始", periodEnd: "終了", waiting: "待機中"
     },
     "zh-CN": {
-        title: "Polymarket BTC 5m 交易机器人",
-        settings: "设置",
-        privateKey: "私钥",
-        privateKeyPlaceholder: "输入您的私钥 (0x...)",
-        privateKeyHint: "私钥仅在交易期间存储在内存中",
-        theme: "主题",
-        themeSystem: "跟随系统",
-        themeLight: "浅色",
-        themeDark: "深色",
-        language: "语言",
-        start: "开始交易",
-        stop: "停止交易",
-        clearLogs: "清空日志",
-        status: "状态",
-        running: "运行中",
-        stopped: "已停止",
-        currentPeriod: "当前周期",
-        periodStart: "周期开始",
-        periodEnd: "周期结束",
-        secondsRemaining: "剩余秒数",
-        yesOrder: "Yes 订单",
-        noOrder: "No 订单",
-        yesFilled: "Yes 已成交",
-        noFilled: "No 已成交",
-        market: "市场",
-        logs: "日志",
-        noLogs: "暂无日志",
-        connectionStatus: "连接状态",
-        connected: "已连接",
-        disconnected: "已断开",
-        config: "交易配置",
-        tradingPair: "交易对",
-        price: "价格",
-        quantity: "数量",
-        cancelWindow: "取消窗口期",
-        startError: "启动交易失败",
-        stopError: "停止交易失败",
-        seconds: "秒"
+        title: "BTC 5m Bot", settings: "设置", privateKey: "私钥",
+        privateKeyPlaceholder: "输入私钥 (0x...)", privateKeyHint: "仅存储在内存中",
+        theme: "主题", themeSystem: "跟随系统", themeLight: "浅色", themeDark: "深色",
+        language: "语言", start: "开始交易", stop: "停止交易", clearLogs: "清空",
+        status: "状态", running: "运行中", stopped: "已停止",
+        currentPeriod: "当前周期", seconds: "秒", yesOrder: "YES", noOrder: "NO",
+        config: "交易配置", logs: "日志", connected: "已连接", disconnected: "未连接",
+        tradingPair: "交易对", price: "价格", quantity: "数量", cancelWindow: "取消窗口",
+        account: "账户", saveKey: "保存到本地", positions: "持仓",
+        history: "交易历史", balance: "余额", address: "地址",
+        noPositions: "暂无持仓", noHistory: "暂无交易记录",
+        thMarket: "市场", thSide: "方向", thQty: "数量", thAvg: "均价", thValue: "价值",
+        thTime: "时间", thPrice: "价格", thAmount: "数量", wsStatus: "WS",
+        periodStart: "开始", periodEnd: "结束", waiting: "等待中"
     },
     ko: {
-        title: "Polymarket BTC 5m 봇",
-        settings: "설정",
-        privateKey: "개인 키",
-        privateKeyPlaceholder: "개인 키 입력 (0x...)",
-        privateKeyHint: "개인 키는 거래 중에만 메모리에 저장됩니다",
-        theme: "테마",
-        themeSystem: "시스템",
-        themeLight: "라이트",
-        themeDark: "다크",
-        language: "언어",
-        start: "거래 시작",
-        stop: "거래 중지",
-        clearLogs: "로그 지우기",
-        status: "상태",
-        running: "실행 중",
-        stopped: "중지됨",
-        currentPeriod: "현재 기간",
-        periodStart: "기간 시작",
-        periodEnd: "기간 종료",
-        secondsRemaining: "남은 시간",
-        yesOrder: "Yes 주문",
-        noOrder: "No 주문",
-        yesFilled: "Yes 체결",
-        noFilled: "No 체결",
-        market: "시장",
-        logs: "로그",
-        noLogs: "로그 없음",
-        connectionStatus: "연결",
-        connected: "연결됨",
-        disconnected: "연결 끊김",
-        config: "거래 설정",
-        tradingPair: "거래 쌍",
-        price: "가격",
-        quantity: "수량",
-        cancelWindow: "취소 기간",
-        startError: "거래 시작 실패",
-        stopError: "거래 중지 실패",
-        seconds: "초"
+        title: "BTC 5m Bot", settings: "설정", privateKey: "개인 키",
+        privateKeyPlaceholder: "개인 키 입력 (0x...)", privateKeyHint: "메모리에만 저장",
+        theme: "테마", themeSystem: "시스템", themeLight: "라이트", themeDark: "다크",
+        language: "언어", start: "시작", stop: "중지", clearLogs: "지우기",
+        status: "상태", running: "실행 중", stopped: "중지됨",
+        currentPeriod: "현재 기간", seconds: "초", yesOrder: "YES", noOrder: "NO",
+        config: "설정", logs: "로그", connected: "연결됨", disconnected: "끊김",
+        tradingPair: "쌍", price: "가격", quantity: "수량", cancelWindow: "취소",
+        account: "계정", saveKey: "로컬 저장", positions: "포지션",
+        history: "거래 내역", balance: "잔액", address: "주소",
+        noPositions: "포지션 없음", noHistory: "거래 내역 없음",
+        thMarket: "시장", thSide: "방향", thQty: "수량", thAvg: "평균", thValue: "가치",
+        thTime: "시간", thPrice: "가격", thAmount: "금액", wsStatus: "WS",
+        periodStart: "시작", periodEnd: "종료", waiting: "대기 중"
     },
     de: {
-        title: "Polymarket BTC 5m Bot",
-        settings: "Einstellungen",
-        privateKey: "Privater Schlüssel",
-        privateKeyPlaceholder: "Privaten Schlüssel eingeben (0x...)",
-        privateKeyHint: "Privater Schlüssel wird nur während des Handels im Speicher gespeichert",
-        theme: "Design",
-        themeSystem: "System",
-        themeLight: "Hell",
-        themeDark: "Dunkel",
-        language: "Sprache",
-        start: "Handel starten",
-        stop: "Handel stoppen",
-        clearLogs: "Logs löschen",
-        status: "Status",
-        running: "Läuft",
-        stopped: "Gestoppt",
-        currentPeriod: "Aktuelle Periode",
-        periodStart: "Periodenstart",
-        periodEnd: "Periodenende",
-        secondsRemaining: "Verbleibende Sekunden",
-        yesOrder: "Yes Order",
-        noOrder: "No Order",
-        yesFilled: "Yes ausgeführt",
-        noFilled: "No ausgeführt",
-        market: "Markt",
-        logs: "Logs",
-        noLogs: "Noch keine Logs",
-        connectionStatus: "Verbindung",
-        connected: "Verbunden",
-        disconnected: "Getrennt",
-        config: "Handelskonfiguration",
-        tradingPair: "Handelspaar",
-        price: "Preis",
-        quantity: "Menge",
-        cancelWindow: "Cancel-Fenster",
-        startError: "Handel konnte nicht gestartet werden",
-        stopError: "Handel konnte nicht gestoppt werden",
-        seconds: "Sekunden"
+        title: "BTC 5m Bot", settings: "Einstellungen", privateKey: "Privater Schlüssel",
+        privateKeyPlaceholder: "Privaten Schlüssel eingeben (0x...)", privateKeyHint: "Nur im Speicher",
+        theme: "Design", themeSystem: "System", themeLight: "Hell", themeDark: "Dunkel",
+        language: "Sprache", start: "Starten", stop: "Stoppen", clearLogs: "Löschen",
+        status: "Status", running: "Läuft", stopped: "Gestoppt",
+        currentPeriod: "Aktuelle Periode", seconds: "Sek", yesOrder: "YES", noOrder: "NO",
+        config: "Konfiguration", logs: "Protokoll", connected: "Verbunden", disconnected: "Getrennt",
+        tradingPair: "Paar", price: "Preis", quantity: "Menge", cancelWindow: "Abbruch",
+        account: "Konto", saveKey: "Lokal speichern", positions: "Positionen",
+        history: "Handelshistorie", balance: "Guthaben", address: "Adresse",
+        noPositions: "Keine Positionen", noHistory: "Keine Historie",
+        thMarket: "Markt", thSide: "Seite", thQty: "Menge", thAvg: "Durchschnitt", thValue: "Wert",
+        thTime: "Zeit", thPrice: "Preis", thAmount: "Betrag", wsStatus: "WS",
+        periodStart: "Start", periodEnd: "Ende", waiting: "Warten"
     },
     fr: {
-        title: "Bot Polymarket BTC 5m",
-        settings: "Paramètres",
-        privateKey: "Clé privée",
-        privateKeyPlaceholder: "Entrez votre clé privée (0x...)",
-        privateKeyHint: "La clé privée n'est stockée en mémoire que pendant le trading",
-        theme: "Thème",
-        themeSystem: "Système",
-        themeLight: "Clair",
-        themeDark: "Sombre",
-        language: "Langue",
-        start: "Démarrer le trading",
-        stop: "Arrêter le trading",
-        clearLogs: "Effacer les logs",
-        status: "Statut",
-        running: "En cours",
-        stopped: "Arrêté",
-        currentPeriod: "Période actuelle",
-        periodStart: "Début de période",
-        periodEnd: "Fin de période",
-        secondsRemaining: "Secondes restantes",
-        yesOrder: "Ordre Yes",
-        noOrder: "Ordre No",
-        yesFilled: "Yes exécuté",
-        noFilled: "No exécuté",
-        market: "Marché",
-        logs: "Logs",
-        noLogs: "Pas encore de logs",
-        connectionStatus: "Connexion",
-        connected: "Connecté",
-        disconnected: "Déconnecté",
-        config: "Configuration de trading",
-        tradingPair: "Paire de trading",
-        price: "Prix",
-        quantity: "Quantité",
-        cancelWindow: "Fenêtre d'annulation",
-        startError: "Échec du démarrage du trading",
-        stopError: "Échec de l'arrêt du trading",
-        seconds: "secondes"
+        title: "BTC 5m Bot", settings: "Paramètres", privateKey: "Clé privée",
+        privateKeyPlaceholder: "Entrez la clé privée (0x...)", privateKeyHint: "En mémoire uniquement",
+        theme: "Thème", themeSystem: "Système", themeLight: "Clair", themeDark: "Sombre",
+        language: "Langue", start: "Démarrer", stop: "Arrêter", clearLogs: "Effacer",
+        status: "Statut", running: "En cours", stopped: "Arrêté",
+        currentPeriod: "Période actuelle", seconds: "sec", yesOrder: "YES", noOrder: "NO",
+        config: "Configuration", logs: "Journaux", connected: "Connecté", disconnected: "Déconnecté",
+        tradingPair: "Paire", price: "Prix", quantity: "Qté", cancelWindow: "Annulation",
+        account: "Compte", saveKey: "Sauvegarder", positions: "Positions",
+        history: "Historique", balance: "Solde", address: "Adresse",
+        noPositions: "Aucune position", noHistory: "Aucun historique",
+        thMarket: "Marché", thSide: "Côté", thQty: "Qté", thAvg: "Moy", thValue: "Valeur",
+        thTime: "Heure", thPrice: "Prix", thAmount: "Montant", wsStatus: "WS",
+        periodStart: "Début", periodEnd: "Fin", waiting: "En attente"
     },
     es: {
-        title: "Bot Polymarket BTC 5m",
-        settings: "Configuración",
-        privateKey: "Clave privada",
-        privateKeyPlaceholder: "Ingresa tu clave privada (0x...)",
-        privateKeyHint: "La clave privada solo se almacena en memoria durante el trading",
-        theme: "Tema",
-        themeSystem: "Sistema",
-        themeLight: "Claro",
-        themeDark: "Oscuro",
-        language: "Idioma",
-        start: "Iniciar trading",
-        stop: "Detener trading",
-        clearLogs: "Limpiar logs",
-        status: "Estado",
-        running: "Ejecutando",
-        stopped: "Detenido",
-        currentPeriod: "Período actual",
-        periodStart: "Inicio del período",
-        periodEnd: "Fin del período",
-        secondsRemaining: "Segundos restantes",
-        yesOrder: "Orden Yes",
-        noOrder: "Orden No",
-        yesFilled: "Yes ejecutado",
-        noFilled: "No ejecutado",
-        market: "Mercado",
-        logs: "Logs",
-        noLogs: "Sin logs aún",
-        connectionStatus: "Conexión",
-        connected: "Conectado",
-        disconnected: "Desconectado",
-        config: "Configuración de trading",
-        tradingPair: "Par de trading",
-        price: "Precio",
-        quantity: "Cantidad",
-        cancelWindow: "Ventana de cancelación",
-        startError: "Error al iniciar el trading",
-        stopError: "Error al detener el trading",
-        seconds: "segundos"
+        title: "BTC 5m Bot", settings: "Configuración", privateKey: "Clave privada",
+        privateKeyPlaceholder: "Ingresa la clave privada (0x...)", privateKeyHint: "Solo en memoria",
+        theme: "Tema", themeSystem: "Sistema", themeLight: "Claro", themeDark: "Oscuro",
+        language: "Idioma", start: "Iniciar", stop: "Detener", clearLogs: "Limpiar",
+        status: "Estado", running: "Ejecutando", stopped: "Detenido",
+        currentPeriod: "Período actual", seconds: "seg", yesOrder: "YES", noOrder: "NO",
+        config: "Configuración", logs: "Registros", connected: "Conectado", disconnected: "Desconectado",
+        tradingPair: "Par", price: "Precio", quantity: "Cant", cancelWindow: "Cancelación",
+        account: "Cuenta", saveKey: "Guardar local", positions: "Posiciones",
+        history: "Historial", balance: "Saldo", address: "Dirección",
+        noPositions: "Sin posiciones", noHistory: "Sin historial",
+        thMarket: "Mercado", thSide: "Lado", thQty: "Cant", thAvg: "Prom", thValue: "Valor",
+        thTime: "Hora", thPrice: "Precio", thAmount: "Monto", wsStatus: "WS",
+        periodStart: "Inicio", periodEnd: "Fin", waiting: "Esperando"
     }
 };
 
-// 语言名称映射
 const languageNames = {
-    en: "English",
-    ja: "日本語",
-    "zh-CN": "简体中文",
-    ko: "한국어",
-    de: "Deutsch",
-    fr: "Français",
-    es: "Español"
+    en: "English", ja: "日本語", "zh-CN": "简体中文",
+    ko: "한국어", de: "Deutsch", fr: "Français", es: "Español"
 };
 
-// 获取当前语言
-function getCurrentLang() {
-    return localStorage.getItem("lang") || "zh-CN";
-}
+function getCurrentLang() { return localStorage.getItem("lang") || "zh-CN"; }
 
-// 翻译函数
 function t(key) {
     const lang = getCurrentLang();
     return translations[lang]?.[key] || translations["en"][key] || key;
 }
 
-// 设置语言
 function setLanguage(lang) {
     localStorage.setItem("lang", lang);
     updateUI();
 }
 
-// 获取主题
-function getTheme() {
-    return localStorage.getItem("theme") || "system";
-}
+function getTheme() { return localStorage.getItem("theme") || "system"; }
 
-// 设置主题
 function setTheme(theme) {
     localStorage.setItem("theme", theme);
     applyTheme(theme);
 }
 
-// 应用主题
 function applyTheme(theme) {
     const root = document.documentElement;
-    
     if (theme === "system") {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         root.setAttribute("data-theme", prefersDark ? "dark" : "light");
@@ -333,49 +148,68 @@ function applyTheme(theme) {
     }
 }
 
-// 监听系统主题变化
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (getTheme() === "system") {
-        applyTheme("system");
-    }
+    if (getTheme() === "system") applyTheme("system");
 });
 
-// 更新 UI 文本
 function updateUI() {
     document.getElementById("title").textContent = t("title");
     document.getElementById("settings-title").textContent = t("settings");
+    document.getElementById("theme-label").textContent = t("theme");
+    document.getElementById("language-label").textContent = t("language");
+    document.getElementById("account-title").textContent = t("account");
     document.getElementById("private-key-label").textContent = t("privateKey");
     document.getElementById("private-key").placeholder = t("privateKeyPlaceholder");
     document.getElementById("private-key-hint").textContent = t("privateKeyHint");
-    document.getElementById("theme-label").textContent = t("theme");
-    document.getElementById("language-label").textContent = t("language");
-    document.getElementById("start-btn").textContent = t("start");
-    document.getElementById("stop-btn").textContent = t("stop");
-    document.getElementById("clear-logs-btn").textContent = t("clearLogs");
-    document.getElementById("status-title").textContent = t("status");
+    document.getElementById("save-key-label").textContent = t("saveKey");
+    document.getElementById("start-text").textContent = t("start");
+    document.getElementById("stop-text").textContent = t("stop");
+    document.getElementById("address-label").textContent = t("address");
+    document.getElementById("balance-label").textContent = t("balance");
+    document.getElementById("ws-status-label").textContent = t("wsStatus");
+    document.getElementById("period-title").textContent = t("currentPeriod");
+    document.getElementById("seconds-label").textContent = t("seconds");
+    document.getElementById("start-time-label").textContent = t("periodStart");
+    document.getElementById("end-time-label").textContent = t("periodEnd");
+    document.getElementById("orders-title").textContent = t("status");
     document.getElementById("config-title").textContent = t("config");
+    document.getElementById("pair-label").textContent = t("tradingPair");
+    document.getElementById("price-label").textContent = t("price");
+    document.getElementById("qty-label").textContent = t("quantity");
+    document.getElementById("cancel-label").textContent = t("cancelWindow");
+    document.getElementById("positions-title").textContent = t("positions");
+    document.getElementById("history-title").textContent = t("history");
     document.getElementById("logs-title").textContent = t("logs");
-    
-    // 更新主题选项
+    document.getElementById("clear-logs-btn").textContent = t("clearLogs");
+    document.getElementById("no-positions").textContent = t("noPositions");
+    document.getElementById("no-history").textContent = t("noHistory");
+    document.getElementById("th-market").textContent = t("thMarket");
+    document.getElementById("th-side").textContent = t("thSide");
+    document.getElementById("th-qty").textContent = t("thQty");
+    document.getElementById("th-avg").textContent = t("thAvg");
+    document.getElementById("th-value").textContent = t("thValue");
+    document.getElementById("th-market2").textContent = t("thMarket");
+    document.getElementById("th-side2").textContent = t("thSide");
+    document.getElementById("th-price").textContent = t("thPrice");
+    document.getElementById("th-amount").textContent = t("thAmount");
+    document.getElementById("th-time").textContent = t("thTime");
+
     document.getElementById("theme-system").textContent = t("themeSystem");
     document.getElementById("theme-light").textContent = t("themeLight");
     document.getElementById("theme-dark").textContent = t("themeDark");
-    
-    // 更新状态文本
+
     updateStatusDisplay();
 }
 
-// 更新状态显示
 function updateStatusDisplay() {
-    const statusIndicator = document.getElementById("status-indicator");
-    const statusText = document.getElementById("status-text");
+    const badge = document.getElementById("status-badge");
+    const text = document.getElementById("status-text");
     const isRunning = window.tradingState?.running;
-    
     if (isRunning) {
-        statusIndicator.className = "status-indicator running";
-        statusText.textContent = t("running");
+        badge.className = "status-badge running";
+        text.textContent = t("running");
     } else {
-        statusIndicator.className = "status-indicator stopped";
-        statusText.textContent = t("stopped");
+        badge.className = "status-badge stopped";
+        text.textContent = t("stopped");
     }
 }

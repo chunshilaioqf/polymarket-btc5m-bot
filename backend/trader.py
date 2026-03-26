@@ -2,7 +2,6 @@ import httpx
 import asyncio
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-import time
 
 
 class PolymarketAPI:
@@ -10,6 +9,7 @@ class PolymarketAPI:
     
     BASE_URL = "https://clob.polymarket.com"
     GRAPH_URL = "https://clob.polymarket.com/graphql"
+    GAMMA_URL = "https://gamma-api.polymarket.com"
     
     def __init__(self, private_key: str):
         self.private_key = private_key
@@ -22,95 +22,125 @@ class PolymarketAPI:
             from ecdsa import SigningKey, SECP256k1
             import hashlib
             
-            # 移除 0x 前缀
             if private_key.startswith('0x'):
                 private_key = private_key[2:]
             
-            # 将私钥转换为字节
             priv_key_bytes = bytes.fromhex(private_key)
-            
-            # 使用 ecdsa 生成公钥
             sk = SigningKey.from_string(priv_key_bytes, curve=SECP256k1)
             vk = sk.get_verifying_key()
-            
-            # 公钥的 SHA256 哈希
             pub_key_hash = hashlib.sha256(vk.to_string()).digest()
-            
-            # 取最后 20 字节作为地址
             address = pub_key_hash[-20:].hex()
             return "0x" + address
         except Exception as e:
             raise ValueError(f"私钥解析失败: {e}")
-    
-    async def get_markets(self, condition_id: str) -> List[Dict]:
-        """获取市场信息"""
-        query = """
-        query GetCondition($conditionId: String!) {
-            condition(conditionId: $conditionId) {
-                markets {
-                    id
-                    question
-                    description
-                    tokens {
-                        id
-                        symbol
-                        color
-                    }
-                }
-            }
-        }
-        """
-        variables = {"conditionId": condition_id}
-        
-        response = await self.client.post(
-            self.GRAPH_URL,
-            json={"query": query, "variables": variables},
-            headers={"Content-Type": "application/json"}
-        )
-        
-        data = response.json()
-        return data.get("data", {}).get("condition", {}).get("markets", [])
-    
+
+    async def _safe_request(self, method: str, url: str, **kwargs) -> Dict:
+        """安全的 HTTP 请求，带错误处理"""
+        try:
+            if method == "GET":
+                response = await self.client.get(url, **kwargs)
+            elif method == "POST":
+                response = await self.client.post(url, **kwargs)
+            elif method == "DELETE":
+                response = await self.client.delete(url, **kwargs)
+            else:
+                return {"error": f"不支持的方法: {method}"}
+            
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except Exception:
+                    return {"error": "响应解析失败", "raw": response.text[:200]}
+            else:
+                return {"error": f"HTTP {response.status_code}", "detail": response.text[:200]}
+        except httpx.TimeoutException:
+            return {"error": "请求超时"}
+        except httpx.ConnectError as e:
+            return {"error": f"连接失败: {str(e)}"}
+        except Exception as e:
+            return {"error": f"请求异常: {str(e)}"}
+
+    async def get_balance(self) -> Dict:
+        """获取用户余额"""
+        url = f"{self.GAMMA_URL}/positions?user={self.address}"
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list):
+            total_value = 0
+            for pos in result:
+                total_value += float(pos.get("currentValue", 0))
+            return {"balance_usdc": total_value, "positions": result}
+        return result
+
+    async def get_positions(self) -> List[Dict]:
+        """获取用户持仓"""
+        url = f"{self.GAMMA_URL}/positions?user={self.address}"
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list):
+            return result
+        return []
+
+    async def get_trade_history(self, limit: int = 50) -> List[Dict]:
+        """获取交易历史"""
+        url = f"{self.BASE_URL}/fills?address={self.address}&limit={limit}"
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list):
+            return result
+        return []
+
+    async def get_market_by_slug(self, slug: str) -> Optional[Dict]:
+        """通过 slug 获取市场信息"""
+        url = f"{self.GAMMA_URL}/markets?slug={slug}"
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list) and len(result) > 0:
+            return result[0]
+        return None
+
+    async def get_market_by_condition(self, condition_id: str) -> Optional[Dict]:
+        """通过 condition_id 获取市场信息"""
+        url = f"{self.GAMMA_URL}/markets?conditionId={condition_id}"
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list) and len(result) > 0:
+            return result[0]
+        return None
+
     async def get_order_book(self, token_id: str) -> Dict:
         """获取订单簿"""
         url = f"{self.BASE_URL}/orderbook/{token_id}"
-        response = await self.client.get(url)
-        return response.json()
-    
+        return await self._safe_request("GET", url)
+
     async def place_order(self, token_id: str, side: str, price: float, size: float) -> Dict:
         """下单"""
         order_data = {
             "token_id": token_id,
-            "side": side,  # "Buy" or "Sell"
+            "side": side,
             "price": price,
             "size": size,
             "address": self.address,
         }
-        
-        # 这里需要实际签名
-        # 简化版本，实际需要使用私钥签名
         url = f"{self.BASE_URL}/orders"
-        response = await self.client.post(url, json=order_data)
-        return response.json()
-    
+        return await self._safe_request("POST", url, json=order_data)
+
     async def cancel_order(self, order_id: str) -> Dict:
         """取消订单"""
         url = f"{self.BASE_URL}/orders/{order_id}"
-        response = await self.client.delete(url)
-        return response.json()
-    
+        return await self._safe_request("DELETE", url)
+
     async def get_orders(self) -> List[Dict]:
         """获取当前订单"""
         url = f"{self.BASE_URL}/orders?address={self.address}"
-        response = await self.client.get(url)
-        return response.json()
-    
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list):
+            return result
+        return []
+
     async def get_fills(self) -> List[Dict]:
         """获取成交记录"""
         url = f"{self.BASE_URL}/fills?address={self.address}"
-        response = await self.client.get(url)
-        return response.json()
-    
+        result = await self._safe_request("GET", url)
+        if isinstance(result, list):
+            return result
+        return []
+
     async def close(self):
         """关闭连接"""
         await self.client.aclose()
@@ -119,8 +149,8 @@ class PolymarketAPI:
 class BTC5mTrader:
     """BTC 5分钟交易机器人"""
     
-    # Polymarket BTC-updown-5m 的 condition ID
-    CONDITION_ID = "0x3c8fbc4acd7152e5aa4e7ed5b96f6c7f"  # 示例，实际需要查询
+    # Polymarket BTC-updown-5m 的市场 slug
+    MARKET_SLUG = "btc-updown-5m"
     
     def __init__(self, api: PolymarketAPI):
         self.api = api
@@ -133,6 +163,9 @@ class BTC5mTrader:
         self.logs: List[Dict] = []
         self.market_info: Optional[Dict] = None
         self.token_ids: Dict[str, str] = {}
+        self.balance: Dict = {}
+        self.positions: List[Dict] = []
+        self.trade_history: List[Dict] = []
     
     def log(self, level: str, message: str):
         """记录日志"""
@@ -142,7 +175,6 @@ class BTC5mTrader:
             "level": level,
             "message": message
         })
-        # 只保留最近 1000 条日志
         if len(self.logs) > 1000:
             self.logs = self.logs[-1000:]
     
@@ -150,31 +182,76 @@ class BTC5mTrader:
         """初始化，获取市场信息"""
         try:
             self.log("INFO", "正在获取市场信息...")
-            markets = await self.api.get_markets(self.CONDITION_ID)
             
-            if not markets:
-                self.log("ERROR", "未找到市场信息")
+            # 首先尝试通过 slug 获取市场
+            market = await self.api.get_market_by_slug(self.MARKET_SLUG)
+            
+            if not market:
+                # 如果 slug 查询失败，尝试通过搜索
+                self.log("WARNING", f"通过 slug '{self.MARKET_SLUG}' 未找到市场，尝试搜索...")
+                url = f"{self.api.GAMMA_URL}/markets?limit=1"
+                result = await self.api._safe_request("GET", url)
+                if isinstance(result, list) and len(result) > 0:
+                    market = result[0]
+                    self.log("INFO", f"使用第一个可用市场: {market.get('question', 'Unknown')}")
+            
+            if not market:
+                self.log("ERROR", "未找到市场信息，请检查网络连接或 API 可用性")
                 return False
             
-            self.market_info = markets[0]
+            self.market_info = market
             
-            # 获取 token ID
-            for token in self.market_info.get("tokens", []):
-                symbol = token.get("symbol", "").upper()
-                token_id = token.get("id", "")
-                if "YES" in symbol:
-                    self.token_ids["yes"] = token_id
-                elif "NO" in symbol:
-                    self.token_ids["no"] = token_id
+            # 获取 token 信息
+            clob_token_ids = market.get("clobTokenIds")
+            if clob_token_ids:
+                import json
+                try:
+                    tokens = json.loads(clob_token_ids) if isinstance(clob_token_ids, str) else clob_token_ids
+                    if len(tokens) >= 2:
+                        self.token_ids["yes"] = tokens[0]
+                        self.token_ids["no"] = tokens[1]
+                except Exception:
+                    pass
             
-            self.log("INFO", f"市场: {self.market_info.get('question', 'Unknown')}")
+            # 如果没有 clobTokenIds，尝试从 tokens 字段获取
+            if not self.token_ids:
+                tokens = market.get("tokens", [])
+                for token in tokens:
+                    outcome = token.get("outcome", "").upper()
+                    token_id = token.get("tokenId", token.get("id", ""))
+                    if outcome == "YES":
+                        self.token_ids["yes"] = token_id
+                    elif outcome == "NO":
+                        self.token_ids["no"] = token_id
+            
+            self.log("INFO", f"市场: {market.get('question', 'Unknown')}")
+            self.log("INFO", f"Condition ID: {market.get('conditionId', 'N/A')}")
             self.log("INFO", f"Yes Token: {self.token_ids.get('yes', 'N/A')}")
             self.log("INFO", f"No Token: {self.token_ids.get('no', 'N/A')}")
             
+            # 获取余额和持仓
+            await self.update_account_info()
+            
             return True
         except Exception as e:
-            self.log("ERROR", f"初始化失败: {e}")
+            self.log("ERROR", f"初始化异常: {e}")
             return False
+
+    async def update_account_info(self):
+        """更新账户信息"""
+        try:
+            # 获取余额
+            balance_result = await self.api.get_balance()
+            self.balance = balance_result
+            
+            # 获取持仓
+            self.positions = await self.api.get_positions()
+            
+            # 获取交易历史
+            self.trade_history = await self.api.get_trade_history(20)
+            
+        except Exception as e:
+            self.log("WARNING", f"更新账户信息失败: {e}")
     
     async def place_orders(self):
         """在周期开始时下单"""
@@ -192,10 +269,13 @@ class BTC5mTrader:
                     price,
                     size
                 )
-                self.yes_order_id = result.get("orderID") or result.get("id")
-                self.log("INFO", f"Yes 订单已创建: {self.yes_order_id}")
+                if "error" in result:
+                    self.log("ERROR", f"Yes 下单失败: {result['error']}")
+                else:
+                    self.yes_order_id = result.get("orderID") or result.get("id")
+                    self.log("INFO", f"Yes 订单已创建: {self.yes_order_id}")
             except Exception as e:
-                self.log("ERROR", f"Yes 下单失败: {e}")
+                self.log("ERROR", f"Yes 下单异常: {e}")
             
             # 下单 No
             try:
@@ -205,10 +285,13 @@ class BTC5mTrader:
                     price,
                     size
                 )
-                self.no_order_id = result.get("orderID") or result.get("id")
-                self.log("INFO", f"No 订单已创建: {self.no_order_id}")
+                if "error" in result:
+                    self.log("ERROR", f"No 下单失败: {result['error']}")
+                else:
+                    self.no_order_id = result.get("orderID") or result.get("id")
+                    self.log("INFO", f"No 订单已创建: {self.no_order_id}")
             except Exception as e:
-                self.log("ERROR", f"No 下单失败: {e}")
+                self.log("ERROR", f"No 下单异常: {e}")
             
             self.yes_filled = False
             self.no_filled = False
@@ -233,26 +316,30 @@ class BTC5mTrader:
             
             self.log("INFO", f"订单状态 - Yes: {yes_status}, No: {no_status}")
             
-            # 检查是否成交
             if yes_status == "filled" and not self.yes_filled:
                 self.yes_filled = True
                 self.log("INFO", "Yes 订单已成交，正在取消 No 订单...")
                 if self.no_order_id:
-                    await self.api.cancel_order(self.no_order_id)
-                    self.log("INFO", "No 订单已取消")
+                    result = await self.api.cancel_order(self.no_order_id)
+                    if "error" not in result:
+                        self.log("INFO", "No 订单已取消")
+                    else:
+                        self.log("ERROR", f"取消 No 订单失败: {result['error']}")
             
             if no_status == "filled" and not self.no_filled:
                 self.no_filled = True
                 self.log("INFO", "No 订单已成交，正在取消 Yes 订单...")
                 if self.yes_order_id:
-                    await self.api.cancel_order(self.yes_order_id)
-                    self.log("INFO", "Yes 订单已取消")
+                    result = await self.api.cancel_order(self.yes_order_id)
+                    if "error" not in result:
+                        self.log("INFO", "Yes 订单已取消")
+                    else:
+                        self.log("ERROR", f"取消 Yes 订单失败: {result['error']}")
             
-            # 检查是否都被取消
             if yes_status in ["cancelled", "canceled"]:
-                self.yes_filled = True  # 视为已处理
+                self.yes_filled = True
             if no_status in ["cancelled", "canceled"]:
-                self.no_filled = True  # 视为已处理
+                self.no_filled = True
                 
         except Exception as e:
             self.log("ERROR", f"检查订单状态失败: {e}")
@@ -260,7 +347,7 @@ class BTC5mTrader:
     def get_current_period_info(self) -> Dict:
         """获取当前周期信息"""
         timestamp = datetime.now().timestamp()
-        period = int(timestamp // 300)  # 5分钟周期
+        period = int(timestamp // 300)
         period_start = period * 300
         period_end = period_start + 300
         
@@ -278,7 +365,6 @@ class BTC5mTrader:
         self.running = True
         self.log("INFO", "交易机器人已启动")
         
-        # 初始化
         if not await self.initialize():
             self.running = False
             self.log("ERROR", "初始化失败，机器人停止")
@@ -288,22 +374,23 @@ class BTC5mTrader:
             try:
                 period_info = self.get_current_period_info()
                 
-                # 每个周期开始的第一分钟内下单
                 if period_info["is_first_minute"] and not self.yes_order_id:
                     await self.place_orders()
                 
-                # 最后30秒检查并取消
                 if period_info["is_last_30_seconds"]:
                     await self.check_and_cancel()
                 
-                # 如果周期结束，重置订单
+                # 每 30 秒更新一次账户信息
+                if period_info["seconds_until_end"] % 30 == 0:
+                    await self.update_account_info()
+                
                 if period_info["seconds_until_end"] <= 0:
                     self.yes_order_id = None
                     self.no_order_id = None
                     self.yes_filled = False
                     self.no_filled = False
                 
-                await asyncio.sleep(1)  # 每秒检查一次
+                await asyncio.sleep(1)
                 
             except Exception as e:
                 self.log("ERROR", f"交易循环错误: {e}")
@@ -328,5 +415,9 @@ class BTC5mTrader:
                 "yes_filled": self.yes_filled,
                 "no_filled": self.no_filled
             },
-            "market": self.market_info
+            "market": self.market_info,
+            "balance": self.balance,
+            "positions": self.positions,
+            "trade_history": self.trade_history,
+            "address": self.api.address
         }
