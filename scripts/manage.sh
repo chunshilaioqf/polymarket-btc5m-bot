@@ -38,7 +38,7 @@ start() {
     
     if [ -n "$CONDA_ACTIVATE" ]; then
         # Use conda environment
-        eval "$CONDA_ACTIVATE" && nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
+        nohup bash -c "source \"$(conda info --base)/etc/profile.d/conda.sh\" && conda activate $ENV_NAME && uvicorn main:app --host 0.0.0.0 --port 8000" > "$LOG_FILE" 2>&1 &
     else
         # Use system Python
         nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
