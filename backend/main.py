@@ -102,6 +102,8 @@ async def start_trading(request: dict):
     global trader, api, task
     
     private_key = request.get("private_key", "")
+    proxy = request.get("proxy", "") or None
+    
     if not private_key:
         return {"status": "error", "message": "私钥不能为空"}
     
@@ -109,12 +111,14 @@ async def start_trading(request: dict):
         return {"status": "error", "message": "交易已在运行中"}
     
     try:
-        api = PolymarketAPI(private_key)
+        api = PolymarketAPI(private_key, proxy=proxy)
         trader = BTC5mTrader(api)
         task = asyncio.create_task(trader.run())
         asyncio.create_task(broadcast_status())
         asyncio.create_task(broadcast_logs())
-        return {"status": "success", "message": "交易已启动"}
+        
+        proxy_msg = f" (代理: {proxy})" if proxy else ""
+        return {"status": "success", "message": f"交易已启动{proxy_msg}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

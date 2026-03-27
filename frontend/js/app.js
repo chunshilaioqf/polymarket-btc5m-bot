@@ -9,6 +9,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("private-key").value = savedKey;
         document.getElementById("save-private-key").checked = true;
     }
+    const savedProxy = localStorage.getItem("saved_proxy");
+    if (savedProxy) {
+        document.getElementById("proxy").value = savedProxy;
+    }
 
     wsManager = new WSManager();
     wsManager.connect();
@@ -23,11 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupEventListeners() {
     document.getElementById("start-btn").addEventListener("click", async () => {
         const privateKey = document.getElementById("private-key").value.trim();
+        const proxy = document.getElementById("proxy").value.trim();
         if (!privateKey) { alert(t("privateKeyPlaceholder")); return; }
         const btn = document.getElementById("start-btn");
         btn.disabled = true;
         btn.querySelector("span").innerHTML = '<span class="loading"></span>';
-        const result = await startTrading(privateKey);
+        const result = await startTrading(privateKey, proxy);
         btn.disabled = false;
         btn.querySelector("span").textContent = t("start");
         if (result.status === "error") alert(result.message);

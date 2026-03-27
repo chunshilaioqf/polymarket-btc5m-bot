@@ -9,7 +9,7 @@ const translations = {
         currentPeriod: "Current Period", seconds: "sec", yesOrder: "YES", noOrder: "NO",
         config: "Config", logs: "Logs", connected: "Connected", disconnected: "Disconnected",
         tradingPair: "Pair", price: "Price", quantity: "Qty", cancelWindow: "Cancel",
-        account: "Account", saveKey: "Save locally", positions: "Positions",
+        account: "Account", saveKey: "Save locally", proxy: "Proxy (Optional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Bypass region restrictions", positions: "Positions",
         history: "Trade History", balance: "Balance", address: "Address",
         noPositions: "No positions", noHistory: "No trade history",
         thMarket: "Market", thSide: "Side", thQty: "Qty", thAvg: "Avg", thValue: "Value",
@@ -25,7 +25,7 @@ const translations = {
         currentPeriod: "現在期間", seconds: "秒", yesOrder: "YES", noOrder: "NO",
         config: "設定", logs: "ログ", connected: "接続済み", disconnected: "切断",
         tradingPair: "ペア", price: "価格", quantity: "数量", cancelWindow: "キャンセル",
-        account: "アカウント", saveKey: "ローカル保存", positions: "ポジション",
+        account: "アカウント", saveKey: "ローカル保存", proxy: "プロキシ（任意）", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "地域制限を回避", positions: "ポジション",
         history: "取引履歴", balance: "残高", address: "アドレス",
         noPositions: "ポジションなし", noHistory: "取引履歴なし",
         thMarket: "マーケット", thSide: "方向", thQty: "数量", thAvg: "平均", thValue: "価値",
@@ -41,7 +41,7 @@ const translations = {
         currentPeriod: "当前周期", seconds: "秒", yesOrder: "YES", noOrder: "NO",
         config: "交易配置", logs: "日志", connected: "已连接", disconnected: "未连接",
         tradingPair: "交易对", price: "价格", quantity: "数量", cancelWindow: "取消窗口",
-        account: "账户", saveKey: "保存到本地", positions: "持仓",
+        account: "账户", saveKey: "保存到本地", proxy: "代理 (可选)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "绕过地区限制，如 Clash/V2Ray", positions: "持仓",
         history: "交易历史", balance: "余额", address: "地址",
         noPositions: "暂无持仓", noHistory: "暂无交易记录",
         thMarket: "市场", thSide: "方向", thQty: "数量", thAvg: "均价", thValue: "价值",
@@ -57,7 +57,7 @@ const translations = {
         currentPeriod: "현재 기간", seconds: "초", yesOrder: "YES", noOrder: "NO",
         config: "설정", logs: "로그", connected: "연결됨", disconnected: "끊김",
         tradingPair: "쌍", price: "가격", quantity: "수량", cancelWindow: "취소",
-        account: "계정", saveKey: "로컬 저장", positions: "포지션",
+        account: "계정", saveKey: "로컬 저장", proxy: "프록시 (선택)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "지역 제한 우회", positions: "포지션",
         history: "거래 내역", balance: "잔액", address: "주소",
         noPositions: "포지션 없음", noHistory: "거래 내역 없음",
         thMarket: "시장", thSide: "방향", thQty: "수량", thAvg: "평균", thValue: "가치",
@@ -73,7 +73,7 @@ const translations = {
         currentPeriod: "Aktuelle Periode", seconds: "Sek", yesOrder: "YES", noOrder: "NO",
         config: "Konfiguration", logs: "Protokoll", connected: "Verbunden", disconnected: "Getrennt",
         tradingPair: "Paar", price: "Preis", quantity: "Menge", cancelWindow: "Abbruch",
-        account: "Konto", saveKey: "Lokal speichern", positions: "Positionen",
+        account: "Konto", saveKey: "Lokal speichern", proxy: "Proxy (Optional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Regionsbeschränkungen umgehen", positions: "Positionen",
         history: "Handelshistorie", balance: "Guthaben", address: "Adresse",
         noPositions: "Keine Positionen", noHistory: "Keine Historie",
         thMarket: "Markt", thSide: "Seite", thQty: "Menge", thAvg: "Durchschnitt", thValue: "Wert",
@@ -89,7 +89,7 @@ const translations = {
         currentPeriod: "Période actuelle", seconds: "sec", yesOrder: "YES", noOrder: "NO",
         config: "Configuration", logs: "Journaux", connected: "Connecté", disconnected: "Déconnecté",
         tradingPair: "Paire", price: "Prix", quantity: "Qté", cancelWindow: "Annulation",
-        account: "Compte", saveKey: "Sauvegarder", positions: "Positions",
+        account: "Compte", saveKey: "Sauvegarder", proxy: "Proxy (Optionnel)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Contourner les restrictions", positions: "Positions",
         history: "Historique", balance: "Solde", address: "Adresse",
         noPositions: "Aucune position", noHistory: "Aucun historique",
         thMarket: "Marché", thSide: "Côté", thQty: "Qté", thAvg: "Moy", thValue: "Valeur",
@@ -105,7 +105,7 @@ const translations = {
         currentPeriod: "Período actual", seconds: "seg", yesOrder: "YES", noOrder: "NO",
         config: "Configuración", logs: "Registros", connected: "Conectado", disconnected: "Desconectado",
         tradingPair: "Par", price: "Precio", quantity: "Cant", cancelWindow: "Cancelación",
-        account: "Cuenta", saveKey: "Guardar local", positions: "Posiciones",
+        account: "Cuenta", saveKey: "Guardar local", proxy: "Proxy (Opcional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Evitar restricciones regionales", positions: "Posiciones",
         history: "Historial", balance: "Saldo", address: "Dirección",
         noPositions: "Sin posiciones", noHistory: "Sin historial",
         thMarket: "Mercado", thSide: "Lado", thQty: "Cant", thAvg: "Prom", thValue: "Valor",
@@ -161,6 +161,9 @@ function updateUI() {
     document.getElementById("private-key-label").textContent = t("privateKey");
     document.getElementById("private-key").placeholder = t("privateKeyPlaceholder");
     document.getElementById("private-key-hint").textContent = t("privateKeyHint");
+    document.getElementById("proxy-label").textContent = t("proxy");
+    document.getElementById("proxy").placeholder = t("proxyPlaceholder");
+    document.getElementById("proxy-hint").textContent = t("proxyHint");
     document.getElementById("save-key-label").textContent = t("saveKey");
     document.getElementById("start-text").textContent = t("start");
     document.getElementById("stop-text").textContent = t("stop");

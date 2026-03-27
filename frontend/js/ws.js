@@ -88,16 +88,17 @@ class WSManager {
     close() { if (this.ws) this.ws.close(); }
 }
 
-async function startTrading(privateKey) {
+async function startTrading(privateKey, proxy) {
     try {
         const response = await fetch("/api/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ private_key: privateKey })
+            body: JSON.stringify({ private_key: privateKey, proxy: proxy })
         });
         const result = await response.json();
         if (result.status === "success" && document.getElementById("save-private-key").checked) {
             localStorage.setItem("saved_private_key", privateKey);
+            if (proxy) localStorage.setItem("saved_proxy", proxy);
         }
         return result;
     } catch (error) { return { status: "error", message: error.message }; }

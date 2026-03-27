@@ -11,17 +11,24 @@ class PolymarketAPI:
     BASE_URL = "https://clob.polymarket.com"
     GAMMA_URL = "https://gamma-api.polymarket.com"
     
-    def __init__(self, private_key: str):
+    def __init__(self, private_key: str, proxy: str = None):
         self.private_key = private_key
+        self.proxy = proxy
         self.address = self._derive_address(private_key)
-        self.client = httpx.AsyncClient(
-            timeout=30.0,
-            headers={
+        
+        client_kwargs = {
+            "timeout": 30.0,
+            "headers": {
                 "User-Agent": "Polymarket-Bot/1.0",
                 "Accept": "application/json"
             },
-            follow_redirects=True
-        )
+            "follow_redirects": True
+        }
+        
+        if proxy:
+            client_kwargs["proxy"] = proxy
+        
+        self.client = httpx.AsyncClient(**client_kwargs)
     
     def _derive_address(self, private_key: str) -> str:
         try:
