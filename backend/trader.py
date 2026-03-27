@@ -2,6 +2,7 @@ import httpx
 import asyncio
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+import json
 
 
 class PolymarketAPI:
@@ -75,6 +76,49 @@ class PolymarketAPI:
         except Exception as e:
             return {"error": f"请求异常: {type(e).__name__}: {str(e)}", "url": url}
 
+    async def search_btc_updown_market(self) -> Optional[Dict]:
+        """搜索 BTC-updown-5m 市场"""
+        # 方法1: 通过 CLOB API 搜索
+        url = f"{self.BASE_URL}/markets"
+        result = await self._safe_request("GET", url)
+        
+        if isinstance(result, dict) and "data" in result:
+            for market in result["data"]:
+                question = market.get("question", "").lower()
+                if "btc" in question and ("up" in question or "down" in question):
+                    return market
+        
+        # 方法2: 通过 Gamma API 搜索
+        url = f"{self.GAMMA_URL}/markets?active=true&closed=false&limit=100"
+        result = await self._safe_request("GET", url)
+        
+        if isinstance(result, list):
+            for market in result:
+                slug = market.get("slug", "").lower()
+                question = market.get("question", "").lower()
+                if "btc-updown" in slug or ("btc" in question and "updown" in question):
+                    return market
+        
+        # 方法3: 直接访问已知的 condition_id
+        # 使用从网页获取的 condition_id
+        condition_id = "0x02034b733ac884ef935ffd909dfeec133336f81fd5c1c9f32e48ac4842878f91"
+        url = f"{self.BASE_URL}/markets/{condition_id}"
+        result = await self._safe_request("GET", url)
+        
+        if "error" not in result:
+            return result
+        
+        return None
+
+    async def get_market_tokens(self, condition_id: str) -> List[Dict]:
+        """获取市场的 token 信息"""
+        url = f"{self.BASE_URL}/markets/{condition_id}"
+        result = await self._safe_request("GET", url)
+        
+        if "tokens" in result:
+            return result["tokens"]
+        return []
+
     async def get_balance(self) -> Dict:
         """获取用户余额"""
         url = f"{self.GAMMA_URL}/positions?user={self.address}"
@@ -101,22 +145,6 @@ class PolymarketAPI:
         if isinstance(result, list):
             return result
         return []
-
-    async def get_market_by_slug(self, slug: str) -> Optional[Dict]:
-        """通过 slug 获取市场信息"""
-        url = f"{self.GAMMA_URL}/markets?slug={slug}"
-        result = await self._safe_request("GET", url)
-        if isinstance(result, list) and len(result) > 0:
-            return result[0]
-        return None
-
-    async def get_market_by_condition(self, condition_id: str) -> Optional[Dict]:
-        """通过 condition_id 获取市场信息"""
-        url = f"{self.GAMMA_URL}/markets?conditionId={condition_id}"
-        result = await self._safe_request("GET", url)
-        if isinstance(result, list) and len(result) > 0:
-            return result[0]
-        return None
 
     async def get_order_book(self, token_id: str) -> Dict:
         """获取订单簿"""
@@ -164,17 +192,14 @@ class PolymarketAPI:
 class BTC5mTrader:
     """BTC 5分钟交易机器人"""
     
-    # Polymarket BTC-updown-5m 的市场 slug
-    MARKET_SLUG = "btc-updown-5m"
-    
     def __init__(self, api: PolymarketAPI):
         self.api = api
         self.running = False
         self.current_period = 0
-        self.yes_order_id: Optional[str] = None
-        self.no_order_id: Optional[str] = None
-        self.yes_filled = False
-        self.no_filled = False
+        self.up_order_id: Optional[str] = None
+        self.down_order_id: Optional[str] = None
+        self.up_filled = False
+        self.down_filled = False
         self.logs: List[Dict] = []
         self.market_info: Optional[Dict] = None
         self.token_ids: Dict[str, str] = {}
@@ -199,94 +224,65 @@ class BTC5mTrader:
             self.log("INFO", f"正在连接 Polymarket API...")
             self.log("INFO", f"钱包地址: {self.api.address}")
             
-            # 测试 Gamma API 连接
+            # 测试连接
             test_url = f"{self.api.GAMMA_URL}/markets?limit=1"
-            self.log("INFO", f"测试 Gamma API: {test_url}")
             test_result = await self.api._safe_request("GET", test_url)
             
             if "error" in test_result:
-                self.log("ERROR", f"Gamma API 失败: {test_result.get('error')}")
+                self.log("ERROR", f"API 连接失败: {test_result.get('error')}")
                 if "raw" in test_result:
-                    self.log("ERROR", f"响应内容: {test_result['raw']}")
-                if "content_type" in test_result:
-                    self.log("ERROR", f"Content-Type: {test_result['content_type']}")
-                if "response_len" in test_result:
-                    self.log("ERROR", f"响应长度: {test_result['response_len']}")
-                
-                # 尝试 CLOB API
-                self.log("INFO", "尝试 CLOB API...")
-                clob_url = f"{self.api.BASE_URL}/markets?limit=1"
-                self.log("INFO", f"测试 CLOB API: {clob_url}")
-                clob_result = await self.api._safe_request("GET", clob_url)
-                
-                if "error" in clob_result:
-                    self.log("ERROR", f"CLOB API 也失败: {clob_result.get('error')}")
-                    if "raw" in clob_result:
-                        self.log("ERROR", f"CLOB 响应: {clob_result['raw']}")
-                    return False
-                else:
-                    self.log("INFO", "CLOB API 连接成功")
-                    test_result = clob_result
+                    self.log("ERROR", f"响应: {test_result['raw']}")
+                return False
             
-            self.log("INFO", "API 连接成功，正在获取市场信息...")
+            self.log("INFO", "API 连接成功，正在搜索 BTC-updown-5m 市场...")
             
-            # 通过 slug 获取市场
-            market_url = f"{self.api.GAMMA_URL}/markets?slug={self.MARKET_SLUG}"
-            self.log("INFO", f"查询市场: {market_url}")
-            market_result = await self.api._safe_request("GET", market_url)
-            
-            market = None
-            if "error" not in market_result and isinstance(market_result, list) and len(market_result) > 0:
-                market = market_result[0]
-                self.log("INFO", "通过 slug 找到市场")
-            else:
-                if "error" in market_result:
-                    self.log("WARNING", f"slug 查询失败: {market_result['error']}")
-                    if "raw" in market_result:
-                        self.log("WARNING", f"响应: {market_result['raw'][:100]}")
-                
-                # 使用第一个可用市场
-                self.log("INFO", "使用第一个可用市场...")
-                list_url = f"{self.api.GAMMA_URL}/markets?limit=1"
-                list_result = await self.api._safe_request("GET", list_url)
-                if "error" not in list_result and isinstance(list_result, list) and len(list_result) > 0:
-                    market = list_result[0]
-                    self.log("INFO", f"使用市场: {market.get('question', 'Unknown')[:50]}")
-                else:
-                    self.log("ERROR", f"获取市场列表失败: {list_result.get('error', '未知错误')}")
+            # 搜索 BTC-updown 市场
+            market = await self.api.search_btc_updown_market()
             
             if not market:
-                self.log("ERROR", "无法获取任何市场信息，API 可能不可用")
+                self.log("ERROR", "未找到 BTC-updown-5m 市场")
+                self.log("INFO", "提示: 请确认 Polymarket 上存在 btc-updown-5m 事件")
                 return False
             
             self.market_info = market
+            self.log("INFO", f"找到市场: {market.get('question', 'Unknown')[:60]}")
             
-            # 获取 token 信息
-            clob_token_ids = market.get("clobTokenIds")
-            if clob_token_ids:
-                import json
-                try:
-                    tokens = json.loads(clob_token_ids) if isinstance(clob_token_ids, str) else clob_token_ids
-                    if isinstance(tokens, list) and len(tokens) >= 2:
-                        self.token_ids["yes"] = tokens[0]
-                        self.token_ids["no"] = tokens[1]
-                except Exception as e:
-                    self.log("WARNING", f"解析 clobTokenIds 失败: {e}")
+            # 获取 token 信息 (Up/Down)
+            tokens = market.get("tokens", [])
+            if not tokens and market.get("condition_id"):
+                tokens = await self.api.get_market_tokens(market["condition_id"])
             
-            # 从 tokens 字段获取
-            if not self.token_ids:
-                tokens = market.get("tokens", [])
-                for token in tokens if isinstance(tokens, list) else []:
-                    outcome = str(token.get("outcome", "")).upper()
-                    token_id = token.get("tokenId", token.get("id", ""))
-                    if outcome == "YES" and token_id:
-                        self.token_ids["yes"] = token_id
-                    elif outcome == "NO" and token_id:
-                        self.token_ids["no"] = token_id
+            for token in tokens:
+                outcome = str(token.get("outcome", "")).lower()
+                token_id = token.get("token_id", "")
+                if outcome == "up" and token_id:
+                    self.token_ids["up"] = token_id
+                elif outcome == "down" and token_id:
+                    self.token_ids["down"] = token_id
+                elif outcome == "yes" and token_id:
+                    self.token_ids["up"] = token_id
+                elif outcome == "no" and token_id:
+                    self.token_ids["down"] = token_id
             
-            self.log("INFO", f"市场: {market.get('question', 'Unknown')[:60]}")
-            self.log("INFO", f"Yes Token: {self.token_ids.get('yes', '未找到')[:20]}...")
-            self.log("INFO", f"No Token: {self.token_ids.get('no', '未找到')[:20]}...")
+            if not self.token_ids.get("up") or not self.token_ids.get("down"):
+                self.log("WARNING", f"token 信息不完整: {self.token_ids}")
+                # 尝试从 clobTokenIds 获取
+                clob_token_ids = market.get("clobTokenIds")
+                if clob_token_ids:
+                    try:
+                        tokens_list = json.loads(clob_token_ids) if isinstance(clob_token_ids, str) else clob_token_ids
+                        if isinstance(tokens_list, list) and len(tokens_list) >= 2:
+                            self.token_ids["up"] = tokens_list[0]
+                            self.token_ids["down"] = tokens_list[1]
+                    except Exception as e:
+                        self.log("WARNING", f"解析 clobTokenIds 失败: {e}")
+            
+            self.log("INFO", f"Up Token: {self.token_ids.get('up', 'N/A')[:30]}...")
+            self.log("INFO", f"Down Token: {self.token_ids.get('down', 'N/A')[:30]}...")
+            
+            if not self.token_ids.get("up") or not self.token_ids.get("down"):
+                self.log("ERROR", "无法获取 Token ID，请检查市场数据")
+                return False
             
             await self.update_account_info()
             
@@ -300,16 +296,9 @@ class BTC5mTrader:
     async def update_account_info(self):
         """更新账户信息"""
         try:
-            # 获取余额
-            balance_result = await self.api.get_balance()
-            self.balance = balance_result
-            
-            # 获取持仓
+            self.balance = await self.api.get_balance()
             self.positions = await self.api.get_positions()
-            
-            # 获取交易历史
             self.trade_history = await self.api.get_trade_history(20)
-            
         except Exception as e:
             self.log("WARNING", f"更新账户信息失败: {e}")
     
@@ -321,40 +310,40 @@ class BTC5mTrader:
             
             self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}")
             
-            # 下单 Yes
+            # 下单 Up
             try:
                 result = await self.api.place_order(
-                    self.token_ids["yes"],
+                    self.token_ids["up"],
                     "Buy",
                     price,
                     size
                 )
                 if "error" in result:
-                    self.log("ERROR", f"Yes 下单失败: {result['error']}")
+                    self.log("ERROR", f"Up 下单失败: {result['error']}")
                 else:
-                    self.yes_order_id = result.get("orderID") or result.get("id")
-                    self.log("INFO", f"Yes 订单已创建: {self.yes_order_id}")
+                    self.up_order_id = result.get("orderID") or result.get("id")
+                    self.log("INFO", f"Up 订单已创建: {self.up_order_id}")
             except Exception as e:
-                self.log("ERROR", f"Yes 下单异常: {e}")
+                self.log("ERROR", f"Up 下单异常: {e}")
             
-            # 下单 No
+            # 下单 Down
             try:
                 result = await self.api.place_order(
-                    self.token_ids["no"],
+                    self.token_ids["down"],
                     "Buy",
                     price,
                     size
                 )
                 if "error" in result:
-                    self.log("ERROR", f"No 下单失败: {result['error']}")
+                    self.log("ERROR", f"Down 下单失败: {result['error']}")
                 else:
-                    self.no_order_id = result.get("orderID") or result.get("id")
-                    self.log("INFO", f"No 订单已创建: {self.no_order_id}")
+                    self.down_order_id = result.get("orderID") or result.get("id")
+                    self.log("INFO", f"Down 订单已创建: {self.down_order_id}")
             except Exception as e:
-                self.log("ERROR", f"No 下单异常: {e}")
+                self.log("ERROR", f"Down 下单异常: {e}")
             
-            self.yes_filled = False
-            self.no_filled = False
+            self.up_filled = False
+            self.down_filled = False
             
         except Exception as e:
             self.log("ERROR", f"下单失败: {e}")
@@ -364,42 +353,42 @@ class BTC5mTrader:
         try:
             orders = await self.api.get_orders()
             
-            yes_status = "unknown"
-            no_status = "unknown"
+            up_status = "unknown"
+            down_status = "unknown"
             
             for order in orders:
                 oid = order.get("orderID") or order.get("id")
-                if oid == self.yes_order_id:
-                    yes_status = order.get("status", "unknown")
-                elif oid == self.no_order_id:
-                    no_status = order.get("status", "unknown")
+                if oid == self.up_order_id:
+                    up_status = order.get("status", "unknown")
+                elif oid == self.down_order_id:
+                    down_status = order.get("status", "unknown")
             
-            self.log("INFO", f"订单状态 - Yes: {yes_status}, No: {no_status}")
+            self.log("INFO", f"订单状态 - Up: {up_status}, Down: {down_status}")
             
-            if yes_status == "filled" and not self.yes_filled:
-                self.yes_filled = True
-                self.log("INFO", "Yes 订单已成交，正在取消 No 订单...")
-                if self.no_order_id:
-                    result = await self.api.cancel_order(self.no_order_id)
+            if up_status == "filled" and not self.up_filled:
+                self.up_filled = True
+                self.log("INFO", "Up 订单已成交，正在取消 Down 订单...")
+                if self.down_order_id:
+                    result = await self.api.cancel_order(self.down_order_id)
                     if "error" not in result:
-                        self.log("INFO", "No 订单已取消")
+                        self.log("INFO", "Down 订单已取消")
                     else:
-                        self.log("ERROR", f"取消 No 订单失败: {result['error']}")
+                        self.log("ERROR", f"取消 Down 订单失败: {result['error']}")
             
-            if no_status == "filled" and not self.no_filled:
-                self.no_filled = True
-                self.log("INFO", "No 订单已成交，正在取消 Yes 订单...")
-                if self.yes_order_id:
-                    result = await self.api.cancel_order(self.yes_order_id)
+            if down_status == "filled" and not self.down_filled:
+                self.down_filled = True
+                self.log("INFO", "Down 订单已成交，正在取消 Up 订单...")
+                if self.up_order_id:
+                    result = await self.api.cancel_order(self.up_order_id)
                     if "error" not in result:
-                        self.log("INFO", "Yes 订单已取消")
+                        self.log("INFO", "Up 订单已取消")
                     else:
-                        self.log("ERROR", f"取消 Yes 订单失败: {result['error']}")
+                        self.log("ERROR", f"取消 Up 订单失败: {result['error']}")
             
-            if yes_status in ["cancelled", "canceled"]:
-                self.yes_filled = True
-            if no_status in ["cancelled", "canceled"]:
-                self.no_filled = True
+            if up_status in ["cancelled", "canceled"]:
+                self.up_filled = True
+            if down_status in ["cancelled", "canceled"]:
+                self.down_filled = True
                 
         except Exception as e:
             self.log("ERROR", f"检查订单状态失败: {e}")
@@ -434,21 +423,20 @@ class BTC5mTrader:
             try:
                 period_info = self.get_current_period_info()
                 
-                if period_info["is_first_minute"] and not self.yes_order_id:
+                if period_info["is_first_minute"] and not self.up_order_id:
                     await self.place_orders()
                 
                 if period_info["is_last_30_seconds"]:
                     await self.check_and_cancel()
                 
-                # 每 30 秒更新一次账户信息
                 if period_info["seconds_until_end"] % 30 == 0:
                     await self.update_account_info()
                 
                 if period_info["seconds_until_end"] <= 0:
-                    self.yes_order_id = None
-                    self.no_order_id = None
-                    self.yes_filled = False
-                    self.no_filled = False
+                    self.up_order_id = None
+                    self.down_order_id = None
+                    self.up_filled = False
+                    self.down_filled = False
                 
                 await asyncio.sleep(1)
                 
@@ -461,8 +449,8 @@ class BTC5mTrader:
     def stop(self):
         """停止交易"""
         self.running = False
-        self.yes_order_id = None
-        self.no_order_id = None
+        self.up_order_id = None
+        self.down_order_id = None
     
     def get_status(self) -> Dict:
         """获取状态"""
@@ -470,14 +458,15 @@ class BTC5mTrader:
             "running": self.running,
             "current_period": self.get_current_period_info(),
             "orders": {
-                "yes_order_id": self.yes_order_id,
-                "no_order_id": self.no_order_id,
-                "yes_filled": self.yes_filled,
-                "no_filled": self.no_filled
+                "up_order_id": self.up_order_id,
+                "down_order_id": self.down_order_id,
+                "up_filled": self.up_filled,
+                "down_filled": self.down_filled
             },
             "market": self.market_info,
             "balance": self.balance,
             "positions": self.positions,
             "trade_history": self.trade_history,
-            "address": self.api.address
+            "address": self.api.address,
+            "token_ids": self.token_ids
         }
