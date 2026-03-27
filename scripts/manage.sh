@@ -13,16 +13,29 @@ CONDA_ENV_FILE="$PROJECT_DIR/.conda_env"
 
 # Setup conda activation command
 CONDA_ACTIVATE=""
+ENV_NAME=""
 if [ -f "$CONDA_ENV_FILE" ]; then
     ENV_NAME=$(cat "$CONDA_ENV_FILE")
     if command -v conda &> /dev/null; then
         CONDA_BASE=$(conda info --base)
         source "$CONDA_BASE/etc/profile.d/conda.sh"
-        CONDA_ACTIVATE="conda activate $ENV_NAME && "
+        CONDA_ACTIVATE="conda activate $ENV_NAME"
     fi
 fi
 
+# Kill uvicorn processes
+kill_uvicorn() {
+    # Find and kill all uvicorn processes for this project
+    pkill -f "uvicorn main:app" 2>/dev/null || true
+    sleep 1
+    
+    # Force kill if still running
+    pkill -9 -f "uvicorn main:app" 2>/dev/null || true
+    sleep 1
+}
+
 start() {
+    # Check if already running
     if [ -f "$PID_FILE" ]; then
         PID=$(cat "$PID_FILE")
         if ps -p "$PID" > /dev/null 2>&1; then
@@ -33,23 +46,29 @@ start() {
         fi
     fi
 
+    # Also check for any uvicorn processes
+    if pgrep -f "uvicorn main:app" > /dev/null 2>&1; then
+        echo "Found existing uvicorn process, stopping it first..."
+        kill_uvicorn
+    fi
+
     echo "Starting Polymarket BTC 5m Bot..."
     cd "$BACKEND_DIR"
     
     if [ -n "$CONDA_ACTIVATE" ]; then
-        # Use conda environment
-        nohup bash -c "source \"$(conda info --base)/etc/profile.d/conda.sh\" && conda activate $ENV_NAME && uvicorn main:app --host 0.0.0.0 --port 8000" > "$LOG_FILE" 2>&1 &
+        nohup bash -c "source \"$(conda info --base)/etc/profile.d/conda.sh\" && $CONDA_ACTIVATE && uvicorn main:app --host 0.0.0.0 --port 8000" > "$LOG_FILE" 2>&1 &
     else
-        # Use system Python
         nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "$LOG_FILE" 2>&1 &
     fi
     
     echo $! > "$PID_FILE"
     sleep 2
 
-    if ps -p $(cat "$PID_FILE") > /dev/null 2>&1; then
+    # Check if uvicorn is running (find actual process)
+    if pgrep -f "uvicorn main:app" > /dev/null 2>&1; then
+        UVICORN_PID=$(pgrep -f "uvicorn main:app" | head -1)
         echo "✓ Bot started successfully"
-        echo "  PID: $(cat "$PID_FILE")"
+        echo "  PID: $UVICORN_PID"
         echo "  URL: http://localhost:8000"
         echo "  Log: $LOG_FILE"
         if [ -f "$CONDA_ENV_FILE" ]; then
@@ -64,44 +83,28 @@ start() {
 }
 
 stop() {
-    if [ ! -f "$PID_FILE" ]; then
-        echo "Bot is not running (no PID file)"
+    if [ ! -f "$PID_FILE" ] && ! pgrep -f "uvicorn main:app" > /dev/null 2>&1; then
+        echo "Bot is not running"
         return 0
     fi
 
-    PID=$(cat "$PID_FILE")
-    if ps -p "$PID" > /dev/null 2>&1; then
-        echo "Stopping bot (PID: $PID)..."
-        kill "$PID" 2>/dev/null || true
-        sleep 1
-
-        if ps -p "$PID" > /dev/null 2>&1; then
-            echo "Force killing..."
-            kill -9 "$PID" 2>/dev/null || true
-        fi
-
-        rm -f "$PID_FILE"
-        echo "✓ Bot stopped"
-    else
-        echo "Bot process not found (stale PID file)"
-        rm -f "$PID_FILE"
-    fi
+    echo "Stopping bot..."
+    kill_uvicorn
+    rm -f "$PID_FILE"
+    echo "✓ Bot stopped"
 }
 
 info() {
     echo "=== Polymarket BTC 5m Bot Status ==="
     echo ""
 
-    if [ -f "$PID_FILE" ]; then
-        PID=$(cat "$PID_FILE")
-        if ps -p "$PID" > /dev/null 2>&1; then
-            echo "Status: Running ✓"
-            echo "PID: $PID"
-            echo "URL: http://localhost:8000"
-            echo "Log: $LOG_FILE"
-        else
-            echo "Status: Stopped ✗ (stale PID file)"
-        fi
+    # Check by process name
+    if pgrep -f "uvicorn main:app" > /dev/null 2>&1; then
+        UVICORN_PID=$(pgrep -f "uvicorn main:app" | head -1)
+        echo "Status: Running ✓"
+        echo "PID: $UVICORN_PID"
+        echo "URL: http://localhost:8000"
+        echo "Log: $LOG_FILE"
     else
         echo "Status: Stopped ✗"
     fi
