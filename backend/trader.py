@@ -53,25 +53,27 @@ class PolymarketAPI:
             else:
                 return {"error": f"不支持的方法: {method}"}
             
+            status_code = response.status_code
             content_type = response.headers.get("content-type", "")
-            response_text = response.text[:500] if response.text else "(空响应)"
+            response_text = response.text
+            response_len = len(response_text) if response_text else 0
             
-            if response.status_code == 200:
-                if "application/json" in content_type or response.text.startswith(("[", "{")):
+            if status_code == 200:
+                if "application/json" in content_type or (response_text and response_text.strip().startswith(("[", "{"))):
                     try:
                         return response.json()
                     except Exception as e:
-                        return {"error": f"JSON 解析失败: {str(e)}", "raw": response_text}
+                        return {"error": f"JSON 解析失败: {str(e)}", "content_type": content_type, "response_len": response_len, "raw": response_text[:300]}
                 else:
-                    return {"error": f"非 JSON 响应 (Content-Type: {content_type})", "raw": response_text}
+                    return {"error": f"非 JSON 响应", "content_type": content_type, "response_len": response_len, "raw": response_text[:300]}
             else:
-                return {"error": f"HTTP {response.status_code}", "detail": response_text}
+                return {"error": f"HTTP {status_code}", "url": url, "content_type": content_type, "response_len": response_len, "raw": response_text[:300]}
         except httpx.TimeoutException:
-            return {"error": "请求超时"}
+            return {"error": "请求超时", "url": url}
         except httpx.ConnectError as e:
-            return {"error": f"连接失败: {str(e)}"}
+            return {"error": f"连接失败: {str(e)}", "url": url}
         except Exception as e:
-            return {"error": f"请求异常: {type(e).__name__}: {str(e)}"}
+            return {"error": f"请求异常: {type(e).__name__}: {str(e)}", "url": url}
 
     async def get_balance(self) -> Dict:
         """获取用户余额"""
@@ -197,16 +199,34 @@ class BTC5mTrader:
             self.log("INFO", f"正在连接 Polymarket API...")
             self.log("INFO", f"钱包地址: {self.api.address}")
             
-            # 测试连接
+            # 测试 Gamma API 连接
             test_url = f"{self.api.GAMMA_URL}/markets?limit=1"
-            self.log("INFO", f"测试连接: {test_url}")
+            self.log("INFO", f"测试 Gamma API: {test_url}")
             test_result = await self.api._safe_request("GET", test_url)
             
             if "error" in test_result:
-                self.log("ERROR", f"API 连接失败: {test_result['error']}")
+                self.log("ERROR", f"Gamma API 失败: {test_result.get('error')}")
                 if "raw" in test_result:
-                    self.log("ERROR", f"响应内容: {test_result['raw'][:100]}")
-                return False
+                    self.log("ERROR", f"响应内容: {test_result['raw']}")
+                if "content_type" in test_result:
+                    self.log("ERROR", f"Content-Type: {test_result['content_type']}")
+                if "response_len" in test_result:
+                    self.log("ERROR", f"响应长度: {test_result['response_len']}")
+                
+                # 尝试 CLOB API
+                self.log("INFO", "尝试 CLOB API...")
+                clob_url = f"{self.api.BASE_URL}/markets?limit=1"
+                self.log("INFO", f"测试 CLOB API: {clob_url}")
+                clob_result = await self.api._safe_request("GET", clob_url)
+                
+                if "error" in clob_result:
+                    self.log("ERROR", f"CLOB API 也失败: {clob_result.get('error')}")
+                    if "raw" in clob_result:
+                        self.log("ERROR", f"CLOB 响应: {clob_result['raw']}")
+                    return False
+                else:
+                    self.log("INFO", "CLOB API 连接成功")
+                    test_result = clob_result
             
             self.log("INFO", "API 连接成功，正在获取市场信息...")
             
@@ -218,20 +238,25 @@ class BTC5mTrader:
             market = None
             if "error" not in market_result and isinstance(market_result, list) and len(market_result) > 0:
                 market = market_result[0]
-                self.log("INFO", f"通过 slug 找到市场")
+                self.log("INFO", "通过 slug 找到市场")
             else:
                 if "error" in market_result:
                     self.log("WARNING", f"slug 查询失败: {market_result['error']}")
+                    if "raw" in market_result:
+                        self.log("WARNING", f"响应: {market_result['raw'][:100]}")
                 
                 # 使用第一个可用市场
                 self.log("INFO", "使用第一个可用市场...")
-                list_result = await self.api._safe_request("GET", f"{self.api.GAMMA_URL}/markets?limit=1")
+                list_url = f"{self.api.GAMMA_URL}/markets?limit=1"
+                list_result = await self.api._safe_request("GET", list_url)
                 if "error" not in list_result and isinstance(list_result, list) and len(list_result) > 0:
                     market = list_result[0]
                     self.log("INFO", f"使用市场: {market.get('question', 'Unknown')[:50]}")
+                else:
+                    self.log("ERROR", f"获取市场列表失败: {list_result.get('error', '未知错误')}")
             
             if not market:
-                self.log("ERROR", "无法获取市场信息")
+                self.log("ERROR", "无法获取任何市场信息，API 可能不可用")
                 return False
             
             self.market_info = market
@@ -268,6 +293,8 @@ class BTC5mTrader:
             return True
         except Exception as e:
             self.log("ERROR", f"初始化异常: {type(e).__name__}: {e}")
+            import traceback
+            self.log("ERROR", traceback.format_exc())
             return False
 
     async def update_account_info(self):

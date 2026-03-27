@@ -403,7 +403,7 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
-.log-time { color: var(--text-muted); flex-shrink: 0; }
+.log-time { color: var(--text-muted); flex-shrink: 0; min-width: 140px; font-size: 0.7rem; }
 
 .log-level {
     flex-shrink: 0;

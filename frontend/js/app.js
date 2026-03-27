@@ -149,9 +149,16 @@ function appendLogs(logs) {
     logs.forEach(log => {
         const entry = document.createElement("div");
         entry.className = "log-entry";
-        const time = new Date(log.timestamp).toLocaleTimeString();
+        const time = new Date(log.timestamp);
+        const timeStr = time.toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
         entry.innerHTML = `
-            <span class="log-time">${time}</span>
+            <span class="log-time">${timeStr}</span>
             <span class="log-level ${log.level}">${log.level}</span>
             <span class="log-message">${escapeHtml(log.message)}</span>
         `;
