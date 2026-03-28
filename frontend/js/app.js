@@ -84,12 +84,12 @@ function updateStatusUI(state) {
 
     // 更新订单
     if (state.orders) {
-        const yesOrder = state.orders.yes_order_id;
-        const noOrder = state.orders.no_order_id;
-        document.getElementById("yes-order").textContent = yesOrder ? yesOrder.slice(0, 8) + "..." : "-";
-        document.getElementById("no-order").textContent = noOrder ? noOrder.slice(0, 8) + "..." : "-";
-        document.getElementById("yes-status").textContent = state.orders.yes_filled ? "✓ " + t("running") : t("waiting");
-        document.getElementById("no-status").textContent = state.orders.no_filled ? "✓ " + t("running") : t("waiting");
+        const upOrder = state.orders.up_order_id;
+        const downOrder = state.orders.down_order_id;
+        document.getElementById("yes-order").textContent = upOrder ? upOrder.slice(0, 8) + "..." : "-";
+        document.getElementById("no-order").textContent = downOrder ? downOrder.slice(0, 8) + "..." : "-";
+        document.getElementById("yes-status").textContent = state.orders.up_filled ? "✓ 已成交" : t("waiting");
+        document.getElementById("no-status").textContent = state.orders.down_filled ? "✓ 已成交" : t("waiting");
     }
 
     // 更新持仓
