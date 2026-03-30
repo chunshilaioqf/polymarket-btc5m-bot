@@ -10,7 +10,7 @@ const translations = {
         config: "Config", logs: "Logs", connected: "Connected", disconnected: "Disconnected",
         tradingPair: "Pair", price: "Price", quantity: "Qty", cancelWindow: "Cancel",
         account: "Account", saveKey: "Save locally", proxy: "Proxy (Optional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Bypass region restrictions", positions: "Positions",
-        history: "Trade History", balance: "Balance", address: "Address",
+        history: "Trade History", balance: "Balance", eoaAddress: "EOA Address", funderAddress: "Funder", address: "Address",
         noPositions: "No positions", noHistory: "No trade history",
         thMarket: "Market", thSide: "Side", thQty: "Qty", thAvg: "Avg", thValue: "Value",
         thTime: "Time", thPrice: "Price", thAmount: "Amount", wsStatus: "WS",
@@ -26,7 +26,7 @@ const translations = {
         config: "設定", logs: "ログ", connected: "接続済み", disconnected: "切断",
         tradingPair: "ペア", price: "価格", quantity: "数量", cancelWindow: "キャンセル",
         account: "アカウント", saveKey: "ローカル保存", proxy: "プロキシ（任意）", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "地域制限を回避", positions: "ポジション",
-        history: "取引履歴", balance: "残高", address: "アドレス",
+        history: "取引履歴", balance: "残高", eoaAddress: "EOA アドレス", funderAddress: "ファンダー", address: "アドレス",
         noPositions: "ポジションなし", noHistory: "取引履歴なし",
         thMarket: "マーケット", thSide: "方向", thQty: "数量", thAvg: "平均", thValue: "価値",
         thTime: "時間", thPrice: "価格", thAmount: "金額", wsStatus: "WS",
@@ -42,7 +42,7 @@ const translations = {
         config: "交易配置", logs: "日志", connected: "已连接", disconnected: "未连接",
         tradingPair: "交易对", price: "价格", quantity: "数量", cancelWindow: "取消窗口",
         account: "账户", saveKey: "保存到本地", proxy: "代理 (可选)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "绕过地区限制，如 Clash/V2Ray", positions: "持仓",
-        history: "交易历史", balance: "余额", address: "地址",
+        history: "交易历史", balance: "余额", eoaAddress: "EOA 地址", funderAddress: "Funder 地址", address: "地址",
         noPositions: "暂无持仓", noHistory: "暂无交易记录",
         thMarket: "市场", thSide: "方向", thQty: "数量", thAvg: "均价", thValue: "价值",
         thTime: "时间", thPrice: "价格", thAmount: "数量", wsStatus: "WS",
@@ -58,7 +58,7 @@ const translations = {
         config: "설정", logs: "로그", connected: "연결됨", disconnected: "끊김",
         tradingPair: "쌍", price: "가격", quantity: "수량", cancelWindow: "취소",
         account: "계정", saveKey: "로컬 저장", proxy: "프록시 (선택)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "지역 제한 우회", positions: "포지션",
-        history: "거래 내역", balance: "잔액", address: "주소",
+        history: "거래 내역", balance: "잔액", eoaAddress: "EOA 주소", funderAddress: "펀더", address: "주소",
         noPositions: "포지션 없음", noHistory: "거래 내역 없음",
         thMarket: "시장", thSide: "방향", thQty: "수량", thAvg: "평균", thValue: "가치",
         thTime: "시간", thPrice: "가격", thAmount: "금액", wsStatus: "WS",
@@ -74,7 +74,7 @@ const translations = {
         config: "Konfiguration", logs: "Protokoll", connected: "Verbunden", disconnected: "Getrennt",
         tradingPair: "Paar", price: "Preis", quantity: "Menge", cancelWindow: "Abbruch",
         account: "Konto", saveKey: "Lokal speichern", proxy: "Proxy (Optional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Regionsbeschränkungen umgehen", positions: "Positionen",
-        history: "Handelshistorie", balance: "Guthaben", address: "Adresse",
+        history: "Handelshistorie", balance: "Guthaben", eoaAddress: "EOA Adresse", funderAddress: "Funder", eoaAddress: "EOA Adresse", funderAddress: "Funder", address: "Adresse",
         noPositions: "Keine Positionen", noHistory: "Keine Historie",
         thMarket: "Markt", thSide: "Seite", thQty: "Menge", thAvg: "Durchschnitt", thValue: "Wert",
         thTime: "Zeit", thPrice: "Preis", thAmount: "Betrag", wsStatus: "WS",
@@ -90,7 +90,7 @@ const translations = {
         config: "Configuration", logs: "Journaux", connected: "Connecté", disconnected: "Déconnecté",
         tradingPair: "Paire", price: "Prix", quantity: "Qté", cancelWindow: "Annulation",
         account: "Compte", saveKey: "Sauvegarder", proxy: "Proxy (Optionnel)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Contourner les restrictions", positions: "Positions",
-        history: "Historique", balance: "Solde", address: "Adresse",
+        history: "Historique", balance: "Solde", eoaAddress: "EOA Adresse", funderAddress: "Funder", eoaAddress: "EOA Adresse", funderAddress: "Funder", address: "Adresse",
         noPositions: "Aucune position", noHistory: "Aucun historique",
         thMarket: "Marché", thSide: "Côté", thQty: "Qté", thAvg: "Moy", thValue: "Valeur",
         thTime: "Heure", thPrice: "Prix", thAmount: "Montant", wsStatus: "WS",
@@ -106,7 +106,7 @@ const translations = {
         config: "Configuración", logs: "Registros", connected: "Conectado", disconnected: "Desconectado",
         tradingPair: "Par", price: "Precio", quantity: "Cant", cancelWindow: "Cancelación",
         account: "Cuenta", saveKey: "Guardar local", proxy: "Proxy (Opcional)", proxyPlaceholder: "http://127.0.0.1:7890", proxyHint: "Evitar restricciones regionales", positions: "Posiciones",
-        history: "Historial", balance: "Saldo", address: "Dirección",
+        history: "Historial", balance: "Saldo", eoaAddress: "EOA Dirección", funderAddress: "Funder", address: "Dirección",
         noPositions: "Sin posiciones", noHistory: "Sin historial",
         thMarket: "Mercado", thSide: "Lado", thQty: "Cant", thAvg: "Prom", thValue: "Valor",
         thTime: "Hora", thPrice: "Precio", thAmount: "Monto", wsStatus: "WS",
@@ -167,8 +167,8 @@ function updateUI() {
     document.getElementById("save-key-label").textContent = t("saveKey");
     document.getElementById("start-text").textContent = t("start");
     document.getElementById("stop-text").textContent = t("stop");
-    document.getElementById("address-label").textContent = t("address");
-    document.getElementById("balance-label").textContent = t("balance");
+    document.getElementById("eoa-label").textContent = t("eoaAddress");
+    document.getElementById("funder-label").textContent = t("funderAddress");
     document.getElementById("ws-status-label").textContent = t("wsStatus");
     document.getElementById("period-title").textContent = t("currentPeriod");
     document.getElementById("seconds-label").textContent = t("seconds");
