@@ -231,8 +231,10 @@ class PolymarketAPI:
 class BTC5mTrader:
     """BTC 5分钟交易机器人"""
     
-    def __init__(self, api: PolymarketAPI):
+    def __init__(self, api: PolymarketAPI, order_price: float = 0.10, order_size: int = 5):
         self.api = api
+        self.order_price = order_price
+        self.order_size = order_size
         self.running = False
         self.up_order_id: Optional[str] = None
         self.down_order_id: Optional[str] = None
@@ -346,10 +348,10 @@ class BTC5mTrader:
             self.log("ERROR", "无法下单：token 信息缺失")
             return
         
-        price = 0.10  # Limit price: 10
-        size = 10     # Shares: 10 (最小金额 $1 = 0.10 × 10)
+        price = self.order_price
+        size = self.order_size
         
-        self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}")
+        self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}, 金额: ${price*size:.2f}")
         self.log("INFO", f"市场: {self.market_info.get('question', 'N/A')[:50]}")
         self.log("INFO", f"Tick Size: {self.tick_size}, Neg Risk: {self.neg_risk}")
         self.log("INFO", f"钱包地址: {self.api.address}")
@@ -449,11 +451,11 @@ class BTC5mTrader:
             price = 0.01  # 快速卖出价格
             
             if self.up_filled and self.token_ids.get("up"):
-                self.log("INFO", f"平仓: 卖出 Up 仓位，价格 {price}，数量 10")
+                self.log("INFO", f"平仓: 卖出 Up 仓位，价格 {price}，数量 {self.order_size}")
                 result = self.api.create_order(
                     token_id=self.token_ids["up"],
                     price=price,
-                    size=10,
+                    size=self.order_size,
                     side=SELL,
                     tick_size=self.tick_size,
                     neg_risk=self.neg_risk
@@ -464,11 +466,11 @@ class BTC5mTrader:
                     self.log("INFO", f"平仓 Up 订单已创建")
             
             if self.down_filled and self.token_ids.get("down"):
-                self.log("INFO", f"平仓: 卖出 Down 仓位，价格 {price}，数量 10")
+                self.log("INFO", f"平仓: 卖出 Down 仓位，价格 {price}，数量 {self.order_size}")
                 result = self.api.create_order(
                     token_id=self.token_ids["down"],
                     price=price,
-                    size=10,
+                    size=self.order_size,
                     side=SELL,
                     tick_size=self.tick_size,
                     neg_risk=self.neg_risk

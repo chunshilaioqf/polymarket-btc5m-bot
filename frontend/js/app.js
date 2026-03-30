@@ -22,6 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedSigType) {
         document.getElementById("signature-type").value = savedSigType;
     }
+    const savedPrice = localStorage.getItem("saved_order_price");
+    if (savedPrice) {
+        document.getElementById("order-price").value = savedPrice;
+    }
+    const savedSize = localStorage.getItem("saved_order_size");
+    if (savedSize) {
+        document.getElementById("order-size").value = savedSize;
+    }
 
     wsManager = new WSManager();
     wsManager.connect();
@@ -39,14 +47,22 @@ function setupEventListeners() {
         const proxy = document.getElementById("proxy").value.trim();
         const signatureType = parseInt(document.getElementById("signature-type").value);
         const funder = document.getElementById("funder").value.trim();
+        const orderPrice = parseFloat(document.getElementById("order-price").value);
+        const orderSize = parseInt(document.getElementById("order-size").value);
         
         if (!privateKey) { alert(t("privateKeyPlaceholder")); return; }
+        
+        // 验证最小金额
+        if (orderPrice * orderSize < 1) {
+            alert("最小订单金额为 $1！当前: $" + (orderPrice * orderSize).toFixed(2));
+            return;
+        }
         
         const btn = document.getElementById("start-btn");
         btn.disabled = true;
         btn.querySelector("span").innerHTML = '<span class="loading"></span>';
         
-        const result = await startTrading(privateKey, proxy, signatureType, funder);
+        const result = await startTrading(privateKey, proxy, signatureType, funder, orderPrice, orderSize);
         
         btn.disabled = false;
         btn.querySelector("span").textContent = t("start");
@@ -54,13 +70,14 @@ function setupEventListeners() {
         if (result.status === "error") {
             alert(result.message);
         } else {
-            // 保存配置到 localStorage
             if (document.getElementById("save-private-key").checked) {
                 localStorage.setItem("saved_private_key", privateKey);
             }
             localStorage.setItem("saved_proxy", proxy);
             localStorage.setItem("saved_funder", funder);
             localStorage.setItem("saved_signature_type", signatureType.toString());
+            localStorage.setItem("saved_order_price", orderPrice.toString());
+            localStorage.setItem("saved_order_size", orderSize.toString());
         }
     });
 

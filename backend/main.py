@@ -105,16 +105,22 @@ async def start_trading(request: dict):
     proxy = request.get("proxy", "") or None
     signature_type = int(request.get("signature_type", 2))
     funder = request.get("funder", "") or None
+    order_price = float(request.get("order_price", 0.10))
+    order_size = int(request.get("order_size", 5))
     
     if not private_key:
         return {"status": "error", "message": "私钥不能为空"}
+    
+    # 验证最小金额
+    if order_price * order_size < 1:
+        return {"status": "error", "message": f"最小订单金额为 $1！当前: ${order_price * order_size:.2f}"}
     
     if trader and trader.running:
         return {"status": "error", "message": "交易已在运行中"}
     
     try:
         api = PolymarketAPI(private_key, proxy=proxy, signature_type=signature_type, funder=funder)
-        trader = BTC5mTrader(api)
+        trader = BTC5mTrader(api, order_price=order_price, order_size=order_size)
         task = asyncio.create_task(trader.run())
         asyncio.create_task(broadcast_status())
         asyncio.create_task(broadcast_logs())
@@ -122,7 +128,7 @@ async def start_trading(request: dict):
         proxy_msg = f" (代理: {proxy})" if proxy else ""
         type_names = {0: "EOA", 1: "POLY_PROXY", 2: "GNOSIS_SAFE"}
         type_msg = type_names.get(signature_type, str(signature_type))
-        return {"status": "success", "message": f"交易已启动{proxy_msg} (钱包类型: {type_msg})"}
+        return {"status": "success", "message": f"交易已启动{proxy_msg} (钱包类型: {type_msg}, 价格: {order_price}, 数量: {order_size})"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
