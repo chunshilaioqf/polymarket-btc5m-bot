@@ -156,7 +156,11 @@ class PolymarketAPI:
             # 提交订单
             response = self.client.post_order(signed_order)
             
-            return response
+            if isinstance(response, bool):
+                return {"success": response}
+            if isinstance(response, dict):
+                return response
+            return {"success": True, "raw": str(response)}
         except Exception as e:
             return {"error": str(e)}
     
