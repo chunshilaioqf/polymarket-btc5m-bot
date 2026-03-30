@@ -423,6 +423,44 @@ class BTC5mTrader:
         except Exception as e:
             self.log("ERROR", f"检查订单失败: {e}")
     
+    async def close_position(self):
+        """在最后30秒平仓（卖出已成交的仓位）"""
+        try:
+            price = 0.01  # 快速卖出价格
+            
+            if self.up_filled and self.token_ids.get("up"):
+                self.log("INFO", f"平仓: 卖出 Up 仓位，价格 {price}，数量 5")
+                result = self.api.create_order(
+                    token_id=self.token_ids["up"],
+                    price=price,
+                    size=5,
+                    side=SELL,
+                    tick_size=self.tick_size,
+                    neg_risk=self.neg_risk
+                )
+                if "error" in result:
+                    self.log("ERROR", f"平仓 Up 失败: {result['error']}")
+                else:
+                    self.log("INFO", f"平仓 Up 订单已创建")
+            
+            if self.down_filled and self.token_ids.get("down"):
+                self.log("INFO", f"平仓: 卖出 Down 仓位，价格 {price}，数量 5")
+                result = self.api.create_order(
+                    token_id=self.token_ids["down"],
+                    price=price,
+                    size=5,
+                    side=SELL,
+                    tick_size=self.tick_size,
+                    neg_risk=self.neg_risk
+                )
+                if "error" in result:
+                    self.log("ERROR", f"平仓 Down 失败: {result['error']}")
+                else:
+                    self.log("INFO", f"平仓 Down 订单已创建")
+                    
+        except Exception as e:
+            self.log("ERROR", f"平仓异常: {e}")
+    
     def get_current_period_info(self) -> Dict:
         timestamp = datetime.now().timestamp()
         period = int(timestamp // 300)
@@ -460,9 +498,10 @@ class BTC5mTrader:
                 if period_info["is_first_minute"] and not self.up_order_id and self.token_ids:
                     await self.place_orders()
                 
-                # 最后30秒检查
+                # 最后30秒检查并平仓
                 if period_info["is_last_30_seconds"]:
                     await self.check_and_cancel()
+                    await self.close_position()
                 
                 # 每30秒更新账户
                 if period_info["seconds_until_end"] % 30 == 0:
