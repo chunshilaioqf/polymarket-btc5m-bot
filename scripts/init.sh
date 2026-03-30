@@ -71,16 +71,16 @@ fi
 echo ""
 echo "Installing Python dependencies..."
 cd "$BACKEND_DIR"
-$PIP install --break-system-packages -q -r requirements.txt 2>/dev/null || $PIP install -q -r requirements.txt
+$PIP install -q -r requirements.txt
 echo "✓ Python dependencies installed"
 
-# Check uvicorn
-echo "Checking uvicorn..."
-if command -v uvicorn &> /dev/null || $PYTHON -c "import uvicorn" 2>/dev/null; then
-    echo "✓ uvicorn available"
+# Check py-clob-client
+echo "Checking py-clob-client..."
+if $PYTHON -c "import py_clob_client" 2>/dev/null; then
+    echo "✓ py-clob-client available"
 else
-    echo "Installing uvicorn..."
-    $PIP install --break-system-packages -q uvicorn 2>/dev/null || $PIP install -q uvicorn
+    echo "Installing py-clob-client..."
+    $PIP install -q py-clob-client
 fi
 
 # Save conda env name to file for manage.sh
