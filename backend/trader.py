@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, OrderType, PartialCreateOrderOptions
+from py_clob_client.clob_types import OrderArgs, OrderType, PartialCreateOrderOptions, PostOrdersArgs
 from py_clob_client.order_builder.constants import BUY, SELL
 import py_clob_client.http_helpers.helpers as http_helpers
 
@@ -343,7 +343,7 @@ class BTC5mTrader:
             self.log("WARNING", f"更新账户信息失败: {e}")
     
     async def place_orders(self):
-        """下单"""
+        """下单（批量提交）"""
         if not self.token_ids.get("up") or not self.token_ids.get("down"):
             self.log("ERROR", "无法下单：token 信息缺失")
             return
@@ -354,8 +354,6 @@ class BTC5mTrader:
         self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}, 金额: ${price*size:.2f}")
         self.log("INFO", f"市场: {self.market_info.get('question', 'N/A')[:50]}")
         self.log("INFO", f"Tick Size: {self.tick_size}, Neg Risk: {self.neg_risk}")
-        self.log("INFO", f"钱包地址: {self.api.address}")
-        self.log("INFO", f"签名类型: {self.api.signature_type}")
         
         # 先取消所有旧挂单
         try:
@@ -370,42 +368,53 @@ class BTC5mTrader:
         except Exception as e:
             self.log("WARNING", f"取消旧挂单失败: {e}")
         
-        # 下单 Up
+        # 批量创建并提交订单
         try:
-            result = self.api.create_order(
-                token_id=self.token_ids["up"],
-                price=price,
-                size=size,
-                side=BUY,
+            options = PartialCreateOrderOptions(
                 tick_size=self.tick_size,
                 neg_risk=self.neg_risk
             )
-            if "error" in result:
-                self.log("ERROR", f"Up 下单失败: {result['error']}")
-            else:
-                self.up_order_id = result.get("orderID", result.get("success", {}).get("orderID"))
-                self.log("INFO", f"Up 订单已创建: {self.up_order_id}")
-        except Exception as e:
-            self.log("ERROR", f"Up 下单异常: {e}")
-        
-        # 下单 Down
-        try:
-            result = self.api.create_order(
-                token_id=self.token_ids["down"],
-                price=price,
-                size=size,
-                side=BUY
+            
+            # 创建 Up 订单
+            up_signed = self.api.client.create_order(
+                OrderArgs(token_id=self.token_ids["up"], price=price, size=size, side=BUY),
+                options=options
             )
-            if "error" in result:
-                self.log("ERROR", f"Down 下单失败: {result['error']}")
-            else:
-                self.down_order_id = result.get("orderID", result.get("success", {}).get("orderID"))
-                self.log("INFO", f"Down 订单已创建: {self.down_order_id}")
+            
+            # 创建 Down 订单
+            down_signed = self.api.client.create_order(
+                OrderArgs(token_id=self.token_ids["down"], price=price, size=size, side=BUY),
+                options=options
+            )
+            
+            # 批量提交
+            results = self.api.client.post_orders([
+                PostOrdersArgs(order=up_signed),
+                PostOrdersArgs(order=down_signed)
+            ])
+            
+            # 处理结果
+            if isinstance(results, list):
+                for i, result in enumerate(results):
+                    direction = "Up" if i == 0 else "Down"
+                    if isinstance(result, dict):
+                        oid = result.get("orderID") or result.get("order_id")
+                        if oid:
+                            if i == 0:
+                                self.up_order_id = oid
+                            else:
+                                self.down_order_id = oid
+                            self.log("INFO", f"{direction} 订单已创建: {oid}")
+                        else:
+                            self.log("ERROR", f"{direction} 下单失败: {result}")
+                    else:
+                        self.log("INFO", f"{direction} 下单结果: {result}")
+            
+            self.up_filled = False
+            self.down_filled = False
+            
         except Exception as e:
-            self.log("ERROR", f"Down 下单异常: {e}")
-        
-        self.up_filled = False
-        self.down_filled = False
+            self.log("ERROR", f"批量下单异常: {e}")
     
     async def check_and_cancel(self):
         """检查并取消订单"""
