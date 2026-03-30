@@ -52,8 +52,16 @@ start() {
     echo "Starting Polymarket BTC 5m Bot..."
     cd "$BACKEND_DIR"
     
-    if [ -n "$CONDA_ACTIVATE" ]; then
-        nohup bash -c "source \"$(conda info --base)/etc/profile.d/conda.sh\" && $CONDA_ACTIVATE && uvicorn main:app --host 0.0.0.0 --port ${PORT}" > "$LOG_FILE" 2>&1 &
+    if [ -n "$CONDA_ACTIVATE" ] && [ -f "$CONDA_ENV_FILE" ]; then
+        ENV_NAME=$(cat "$CONDA_ENV_FILE")
+        CONDA_BASE=$(conda info --base 2>/dev/null || echo "$HOME/anaconda3")
+        CONDA_SH="$CONDA_BASE/etc/profile.d/conda.sh"
+        
+        if [ -f "$CONDA_SH" ]; then
+            nohup bash -c "source '$CONDA_SH' && conda activate $ENV_NAME && uvicorn main:app --host 0.0.0.0 --port ${PORT}" > "$LOG_FILE" 2>&1 &
+        else
+            nohup bash -c "uvicorn main:app --host 0.0.0.0 --port ${PORT}" > "$LOG_FILE" 2>&1 &
+        fi
     else
         nohup uvicorn main:app --host 0.0.0.0 --port ${PORT} > "$LOG_FILE" 2>&1 &
     fi
