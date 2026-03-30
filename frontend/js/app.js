@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(getTheme());
     updateUI();
 
+    // 恢复保存的配置
     const savedKey = localStorage.getItem("saved_private_key");
     if (savedKey) {
         document.getElementById("private-key").value = savedKey;
@@ -12,6 +13,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedProxy = localStorage.getItem("saved_proxy");
     if (savedProxy) {
         document.getElementById("proxy").value = savedProxy;
+    }
+    const savedFunder = localStorage.getItem("saved_funder");
+    if (savedFunder) {
+        document.getElementById("funder").value = savedFunder;
+    }
+    const savedSigType = localStorage.getItem("saved_signature_type");
+    if (savedSigType) {
+        document.getElementById("signature-type").value = savedSigType;
     }
 
     wsManager = new WSManager();
@@ -30,14 +39,29 @@ function setupEventListeners() {
         const proxy = document.getElementById("proxy").value.trim();
         const signatureType = parseInt(document.getElementById("signature-type").value);
         const funder = document.getElementById("funder").value.trim();
+        
         if (!privateKey) { alert(t("privateKeyPlaceholder")); return; }
+        
         const btn = document.getElementById("start-btn");
         btn.disabled = true;
         btn.querySelector("span").innerHTML = '<span class="loading"></span>';
+        
         const result = await startTrading(privateKey, proxy, signatureType, funder);
+        
         btn.disabled = false;
         btn.querySelector("span").textContent = t("start");
-        if (result.status === "error") alert(result.message);
+        
+        if (result.status === "error") {
+            alert(result.message);
+        } else {
+            // 保存配置到 localStorage
+            if (document.getElementById("save-private-key").checked) {
+                localStorage.setItem("saved_private_key", privateKey);
+            }
+            localStorage.setItem("saved_proxy", proxy);
+            localStorage.setItem("saved_funder", funder);
+            localStorage.setItem("saved_signature_type", signatureType.toString());
+        }
     });
 
     document.getElementById("stop-btn").addEventListener("click", async () => {

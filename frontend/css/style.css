@@ -128,7 +128,7 @@ body {
 }
 
 .form-group select,
-.form-group input[type="password"] {
+.form-group input {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid rgba(255,255,255,0.1);
