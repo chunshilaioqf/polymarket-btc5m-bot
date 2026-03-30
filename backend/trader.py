@@ -339,8 +339,8 @@ class BTC5mTrader:
             self.log("ERROR", "无法下单：token 信息缺失")
             return
         
-        price = 0.10  # 价格 0.10 = 10%
-        size = 0.5
+        price = 0.10  # Limit price: 10
+        size = 5      # Shares: 5 (最小数量)
         
         self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}")
         self.log("INFO", f"市场: {self.market_info.get('question', 'N/A')[:50]}")
