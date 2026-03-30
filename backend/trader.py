@@ -355,6 +355,19 @@ class BTC5mTrader:
         self.log("INFO", f"钱包地址: {self.api.address}")
         self.log("INFO", f"签名类型: {self.api.signature_type}")
         
+        # 先取消所有旧挂单
+        try:
+            existing_orders = self.api.get_orders()
+            if existing_orders:
+                self.log("INFO", f"取消 {len(existing_orders)} 个旧挂单...")
+                for order in existing_orders:
+                    oid = order.get("order_id") or order.get("orderID")
+                    if oid:
+                        self.api.cancel_order(oid)
+                self.log("INFO", "旧挂单已取消")
+        except Exception as e:
+            self.log("WARNING", f"取消旧挂单失败: {e}")
+        
         # 下单 Up
         try:
             result = self.api.create_order(
