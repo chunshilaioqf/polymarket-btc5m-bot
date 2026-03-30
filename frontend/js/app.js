@@ -73,15 +73,20 @@ function updateStatusUI(state) {
 
     updateStatusDisplay();
 
-    // 更新地址
-    if (state.address) {
-        const addr = state.address;
-        document.getElementById("address-value").textContent = addr.slice(0, 6) + "..." + addr.slice(-4);
+    // 更新地址和余额
+    if (state.eoa_address) {
+        const eoa = state.eoa_address;
+        document.getElementById("eoa-value").textContent = eoa.slice(0, 6) + "..." + eoa.slice(-4);
     }
-
-    // 更新余额
-    if (state.balance && state.balance.balance_usdc !== undefined) {
-        document.getElementById("balance-value").textContent = "$" + state.balance.balance_usdc.toFixed(2);
+    if (state.funder_address) {
+        const funder = state.funder_address;
+        document.getElementById("funder-value").textContent = funder.slice(0, 6) + "..." + funder.slice(-4);
+    }
+    if (state.balance) {
+        const eoaBal = state.balance.eoa?.balance_usdc || 0;
+        const funderBal = state.balance.funder?.balance_usdc || 0;
+        document.getElementById("eoa-balance").textContent = "$" + eoaBal.toFixed(2);
+        document.getElementById("funder-balance").textContent = "$" + funderBal.toFixed(2);
     }
 
     // 更新订单

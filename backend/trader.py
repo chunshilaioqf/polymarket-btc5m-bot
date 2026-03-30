@@ -180,17 +180,26 @@ class PolymarketAPI:
         except Exception as e:
             return []
     
-    async def get_positions(self) -> List[Dict]:
+    async def get_positions(self, address: str = None) -> List[Dict]:
         """获取持仓"""
-        url = f"{self.GAMMA_URL}/positions?user={self.address}"
+        addr = address or self.address
+        url = f"{self.GAMMA_URL}/positions?user={addr}"
         result = await self._safe_gamma_request(url)
         return result if isinstance(result, list) else []
     
-    async def get_balance(self) -> Dict:
+    async def get_balance(self, address: str = None) -> Dict:
         """获取余额"""
-        positions = await self.get_positions()
+        positions = await self.get_positions(address)
         total_value = sum(float(p.get("currentValue", 0)) for p in positions)
-        return {"balance_usdc": total_value, "positions": positions}
+        addr = address or self.address
+        return {"balance_usdc": total_value, "positions": positions, "address": addr}
+    
+    async def get_balances(self) -> Dict:
+        """获取 EOA 和 Funder 两个地址的余额"""
+        eoa_balance = await self.get_balance(self.address)
+        funder_addr = self.funder if self.funder else self.address
+        funder_balance = await self.get_balance(funder_addr)
+        return {"eoa": eoa_balance, "funder": funder_balance}
     
     async def close(self):
         """关闭连接"""
@@ -302,8 +311,9 @@ class BTC5mTrader:
     
     async def update_account_info(self):
         try:
-            self.balance = await self.api.get_balance()
-            self.positions = await self.api.get_positions()
+            balances = await self.api.get_balances()
+            self.balance = balances
+            self.positions = balances.get("funder", {}).get("positions", [])
             self.trade_history = self.api.get_trades(20)
         except Exception as e:
             self.log("WARNING", f"更新账户信息失败: {e}")
@@ -477,6 +487,7 @@ class BTC5mTrader:
             "balance": self.balance,
             "positions": self.positions,
             "trade_history": self.trade_history,
-            "address": self.api.address,
+            "eoa_address": self.api.address,
+            "funder_address": self.api.funder if self.api.funder else self.api.address,
             "token_ids": self.token_ids
         }
