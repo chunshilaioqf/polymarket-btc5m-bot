@@ -190,10 +190,24 @@ class PolymarketAPI:
     
     async def get_balance(self, address: str = None) -> Dict:
         """获取余额"""
-        positions = await self.get_positions(address)
-        total_value = sum(float(p.get("currentValue", 0)) for p in positions)
-        addr = address or self.address
-        return {"balance_usdc": total_value, "positions": positions, "address": addr}
+        try:
+            # 使用 SDK 获取余额
+            from py_clob_client.clob_types import BalanceAllowanceParams, AssetType
+            params = BalanceAllowanceParams(
+                asset_type=AssetType.COLLATERAL,
+                signature_type=self.signature_type
+            )
+            result = self.client.get_balance_allowance(params)
+            balance = float(result.get("balance", 0)) / 1e6  # USDC has 6 decimals
+            return {"balance_usdc": balance, "address": address or self.address}
+        except Exception as e:
+            # 如果 SDK 失败，尝试从 positions 获取
+            addr = address or self.address
+            url = f"{self.GAMMA_URL}/positions?user={addr}"
+            result = await self._safe_gamma_request(url)
+            positions = result if isinstance(result, list) else []
+            total_value = sum(float(p.get("currentValue", 0)) for p in positions)
+            return {"balance_usdc": total_value, "positions": positions, "address": addr}
     
     async def get_balances(self) -> Dict:
         """获取 EOA 和 Funder 两个地址的余额"""
