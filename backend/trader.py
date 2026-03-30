@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, OrderType
+from py_clob_client.clob_types import OrderArgs, OrderType, PartialCreateOrderOptions
 from py_clob_client.order_builder.constants import BUY, SELL
 import py_clob_client.http_helpers.helpers as http_helpers
 
@@ -145,12 +145,13 @@ class PolymarketAPI:
                 side=side
             )
             
-            # 创建并签名订单
-            signed_order = self.client.create_order(
-                order_args,
+            options = PartialCreateOrderOptions(
                 tick_size=tick_size,
                 neg_risk=neg_risk
             )
+            
+            # 创建并签名订单
+            signed_order = self.client.create_order(order_args, options=options)
             
             # 提交订单
             response = self.client.post_order(signed_order)
