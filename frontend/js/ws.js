@@ -88,12 +88,12 @@ class WSManager {
     close() { if (this.ws) this.ws.close(); }
 }
 
-async function startTrading(privateKey, proxy) {
+async function startTrading(privateKey, proxy, signatureType) {
     try {
         const response = await fetch("/api/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ private_key: privateKey, proxy: proxy })
+            body: JSON.stringify({ private_key: privateKey, proxy: proxy, signature_type: signatureType })
         });
         const result = await response.json();
         if (result.status === "success" && document.getElementById("save-private-key").checked) {

@@ -59,6 +59,15 @@
                     <p class="hint" id="proxy-hint">绕过地区限制，如 Clash/V2Ray</p>
                 </div>
                 <div class="form-group">
+                    <label id="wallet-type-label">钱包类型</label>
+                    <select id="signature-type">
+                        <option value="2">GNOSIS_SAFE (默认)</option>
+                        <option value="0">EOA (MetaMask)</option>
+                        <option value="1">POLY_PROXY (Magic Link)</option>
+                    </select>
+                    <p class="hint" id="wallet-type-hint">不确定选哪个？选 GNOSIS_SAFE</p>
+                </div>
+                <div class="form-group">
                     <label>
                         <input type="checkbox" id="save-private-key"> 
                         <span id="save-key-label">保存到本地</span>

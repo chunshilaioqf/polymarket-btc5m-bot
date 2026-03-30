@@ -103,6 +103,7 @@ async def start_trading(request: dict):
     
     private_key = request.get("private_key", "")
     proxy = request.get("proxy", "") or None
+    signature_type = int(request.get("signature_type", 2))
     
     if not private_key:
         return {"status": "error", "message": "私钥不能为空"}
@@ -111,14 +112,16 @@ async def start_trading(request: dict):
         return {"status": "error", "message": "交易已在运行中"}
     
     try:
-        api = PolymarketAPI(private_key, proxy=proxy)
+        api = PolymarketAPI(private_key, proxy=proxy, signature_type=signature_type)
         trader = BTC5mTrader(api)
         task = asyncio.create_task(trader.run())
         asyncio.create_task(broadcast_status())
         asyncio.create_task(broadcast_logs())
         
         proxy_msg = f" (代理: {proxy})" if proxy else ""
-        return {"status": "success", "message": f"交易已启动{proxy_msg}"}
+        type_names = {0: "EOA", 1: "POLY_PROXY", 2: "GNOSIS_SAFE"}
+        type_msg = type_names.get(signature_type, str(signature_type))
+        return {"status": "success", "message": f"交易已启动{proxy_msg} (钱包类型: {type_msg})"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

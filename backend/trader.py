@@ -18,9 +18,10 @@ class PolymarketAPI:
     GAMMA_URL = "https://gamma-api.polymarket.com"
     CHAIN_ID = 137  # Polygon mainnet
     
-    def __init__(self, private_key: str, proxy: str = None):
+    def __init__(self, private_key: str, proxy: str = None, signature_type: int = 2):
         self.private_key = private_key
         self.proxy = proxy
+        self.signature_type = signature_type
         self.client: Optional[ClobClient] = None
         self.http_client = httpx.AsyncClient(
             timeout=30.0,
@@ -65,14 +66,13 @@ class PolymarketAPI:
             # 创建或获取 API 凭证
             self.api_creds = temp_client.create_or_derive_api_creds()
             
-            # 创建正式交易客户端 (使用 Gnosis Safe 签名类型 = 2)
-            # 大多数 Polymarket 用户使用代理钱包
+            # 创建正式交易客户端
             self.client = ClobClient(
                 self.CLOB_HOST,
                 key=self.private_key,
                 chain_id=self.CHAIN_ID,
                 creds=self.api_creds,
-                signature_type=2,  # GNOSIS_SAFE
+                signature_type=self.signature_type,
                 funder=self.address
             )
             
