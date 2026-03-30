@@ -170,7 +170,10 @@ class PolymarketAPI:
     def cancel_order(self, order_id: str) -> Dict:
         """取消订单"""
         try:
-            return self.client.cancel(order_id=order_id)
+            result = self.client.cancel(order_id=order_id)
+            if isinstance(result, bool):
+                return {"success": result}
+            return result if isinstance(result, dict) else {"success": True}
         except Exception as e:
             return {"error": str(e)}
     
@@ -340,7 +343,7 @@ class BTC5mTrader:
             return
         
         price = 0.10  # Limit price: 10
-        size = 5      # Shares: 5 (最小数量)
+        size = 10     # Shares: 10 (最小金额 $1 = 0.10 × 10)
         
         self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}")
         self.log("INFO", f"市场: {self.market_info.get('question', 'N/A')[:50]}")
@@ -429,11 +432,11 @@ class BTC5mTrader:
             price = 0.01  # 快速卖出价格
             
             if self.up_filled and self.token_ids.get("up"):
-                self.log("INFO", f"平仓: 卖出 Up 仓位，价格 {price}，数量 5")
+                self.log("INFO", f"平仓: 卖出 Up 仓位，价格 {price}，数量 10")
                 result = self.api.create_order(
                     token_id=self.token_ids["up"],
                     price=price,
-                    size=5,
+                    size=10,
                     side=SELL,
                     tick_size=self.tick_size,
                     neg_risk=self.neg_risk
@@ -444,11 +447,11 @@ class BTC5mTrader:
                     self.log("INFO", f"平仓 Up 订单已创建")
             
             if self.down_filled and self.token_ids.get("down"):
-                self.log("INFO", f"平仓: 卖出 Down 仓位，价格 {price}，数量 5")
+                self.log("INFO", f"平仓: 卖出 Down 仓位，价格 {price}，数量 10")
                 result = self.api.create_order(
                     token_id=self.token_ids["down"],
                     price=price,
-                    size=5,
+                    size=10,
                     side=SELL,
                     tick_size=self.tick_size,
                     neg_risk=self.neg_risk
