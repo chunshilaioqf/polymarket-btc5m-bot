@@ -29,11 +29,12 @@ function setupEventListeners() {
         const privateKey = document.getElementById("private-key").value.trim();
         const proxy = document.getElementById("proxy").value.trim();
         const signatureType = parseInt(document.getElementById("signature-type").value);
+        const funder = document.getElementById("funder").value.trim();
         if (!privateKey) { alert(t("privateKeyPlaceholder")); return; }
         const btn = document.getElementById("start-btn");
         btn.disabled = true;
         btn.querySelector("span").innerHTML = '<span class="loading"></span>';
-        const result = await startTrading(privateKey, proxy, signatureType);
+        const result = await startTrading(privateKey, proxy, signatureType, funder);
         btn.disabled = false;
         btn.querySelector("span").textContent = t("start");
         if (result.status === "error") alert(result.message);

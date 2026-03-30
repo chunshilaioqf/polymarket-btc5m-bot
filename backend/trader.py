@@ -18,10 +18,11 @@ class PolymarketAPI:
     GAMMA_URL = "https://gamma-api.polymarket.com"
     CHAIN_ID = 137  # Polygon mainnet
     
-    def __init__(self, private_key: str, proxy: str = None, signature_type: int = 2):
+    def __init__(self, private_key: str, proxy: str = None, signature_type: int = 2, funder: str = None):
         self.private_key = private_key
         self.proxy = proxy
         self.signature_type = signature_type
+        self.funder = funder
         self.client: Optional[ClobClient] = None
         self.http_client = httpx.AsyncClient(
             timeout=30.0,
@@ -66,6 +67,9 @@ class PolymarketAPI:
             # 创建或获取 API 凭证
             self.api_creds = temp_client.create_or_derive_api_creds()
             
+            # 确定 funder 地址
+            funder_address = self.funder if self.funder else self.address
+            
             # 创建正式交易客户端
             self.client = ClobClient(
                 self.CLOB_HOST,
@@ -73,7 +77,7 @@ class PolymarketAPI:
                 chain_id=self.CHAIN_ID,
                 creds=self.api_creds,
                 signature_type=self.signature_type,
-                funder=self.address
+                funder=funder_address
             )
             
             return True
@@ -131,12 +135,9 @@ class PolymarketAPI:
         """获取市场信息"""
         return self.client.get_market(condition_id)
     
-    def create_order(self, token_id: str, price: float, size: float, side: int) -> Dict:
+    def create_order(self, token_id: str, price: float, size: float, side: int, tick_size: str = "0.01", neg_risk: bool = False) -> Dict:
         """创建并提交订单"""
         try:
-            # 获取市场信息以获取 tick_size 和 neg_risk
-            # 这里我们需要直接传入参数
-            
             order_args = OrderArgs(
                 token_id=token_id,
                 price=price,
@@ -145,7 +146,11 @@ class PolymarketAPI:
             )
             
             # 创建并签名订单
-            signed_order = self.client.create_order(order_args)
+            signed_order = self.client.create_order(
+                order_args,
+                tick_size=tick_size,
+                neg_risk=neg_risk
+            )
             
             # 提交订单
             response = self.client.post_order(signed_order)
@@ -314,6 +319,9 @@ class BTC5mTrader:
         
         self.log("INFO", f"开始下单 - 价格: {price}, 数量: {size}")
         self.log("INFO", f"市场: {self.market_info.get('question', 'N/A')[:50]}")
+        self.log("INFO", f"Tick Size: {self.tick_size}, Neg Risk: {self.neg_risk}")
+        self.log("INFO", f"钱包地址: {self.api.address}")
+        self.log("INFO", f"签名类型: {self.api.signature_type}")
         
         # 下单 Up
         try:
@@ -321,7 +329,9 @@ class BTC5mTrader:
                 token_id=self.token_ids["up"],
                 price=price,
                 size=size,
-                side=BUY
+                side=BUY,
+                tick_size=self.tick_size,
+                neg_risk=self.neg_risk
             )
             if "error" in result:
                 self.log("ERROR", f"Up 下单失败: {result['error']}")
